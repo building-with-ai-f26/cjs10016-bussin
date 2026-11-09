@@ -3,7 +3,7 @@
 > An iPhone app for NYU's free shuttle buses. It shows where your bus is, when it will reach your stop, and which shuttle gets you where you're going.
 
 - **Builder:** Chris Schwaiger (`@schwaigs-cj`)
-- **Pod:** [add pod]
+- **Pod:** 6
 - **Product page and living PRD:** https://building-with-ai-f26.github.io/cjs10016-bussin/
 - **Interactive prototype:** https://building-with-ai-f26.github.io/cjs10016-bussin/prototype/ (works on a phone)
 - **App:** a native iOS app in SwiftUI with Apple Maps, starting in Build 2. A cloud or TestFlight link comes in Build 5.
