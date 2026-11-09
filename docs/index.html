@@ -137,6 +137,18 @@
       font-size: 13px;
       color: var(--muted);
     }
+    .shot {
+      margin: 16px 0 0;
+      text-align: center;
+    }
+    .shot img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 46px;
+    }
+    .shot figcaption {
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -157,12 +169,13 @@
     <section id="live-demo">
       <h2>Product Showcase (Prototype / Live App / 2-Min Video)</h2>
       <p>
-        <strong>Current Status:</strong> [Build 1: local prototype / Builds 2–4: local app / Build 5: cloud app]<br />
-        <strong>Demo:</strong> [Add a screenshot or GIF now; add the live cloud app URL in Build 5.]
+        <strong>Current Status:</strong> Build 1: clickable home screen mockup. The native iOS app (SwiftUI and MapKit) comes next.<br />
+        <strong>Demo:</strong> <a href="mockup/home.html">Open the clickable mockup</a>. You can drag the map and the sheet, and tap a route to highlight it.
       </p>
-      <p class="meta">
-        Ask your coding agent to embed a screenshot or GIF of your local prototype for Build 1. Keep this evidence current, then add your cloud app link and two-minute video in Build 5.
-      </p>
+      <figure class="shot">
+        <a href="mockup/home.html"><img src="images/home-mockup.png" alt="Bussin home screen: a map around Washington Square with NYU shuttle routes drawn on it, and a bottom sheet listing the next buses at 715 Broadway with arrival times" width="289" height="600" /></a>
+        <figcaption class="meta">The routes and stops are real NYU data from Passio GO's public feed. Bus positions and arrival times are simulated for now.</figcaption>
+      </figure>
     </section>
 
     <!-- LIVING PRD (Updated every week!) -->
@@ -184,14 +197,14 @@
       </ul>
 
       <h3>3. How It Works Under the Hood & Riskiest Assumption (Week 2+)</h3>
-      <p><strong>Riskiest Assumption:</strong> Getting live bus locations. Passio GO pulls them from a feed, but I haven't confirmed that the feed is open to the public or that a third-party app is allowed to use it. Without that data there's nothing to track, so this is the first thing I'm checking.</p>
-      <p><strong>Simple Architecture:</strong> Your location or chosen stop, plus a destination → Bussin web app → live shuttle feed (if I can get access) and NYU route and stop data → map with the next bus, its ETA, and a suggested route</p>
+      <p><strong>Riskiest Assumption:</strong> Permission to use the live bus feed. On Nov 8 I found that Passio GO's feed returns NYU's routes, stops, and live bus positions without a login. What I haven't confirmed is whether Passio allows a third-party app to use it, which matters if Bussin goes in the App Store. If the answer is no, I'll need NYU's help or another data source.</p>
+      <p><strong>Simple Architecture:</strong> Your location or chosen stop, plus a destination → Bussin iOS app (SwiftUI) → Passio GO live feed for bus positions, routes, and stops → Apple Maps (MapKit) showing the next bus, its ETA, and a suggested route</p>
 
       <h3>4. Unit Economics & Analytics Snapshot (Updated Weekly)</h3>
       <div class="grid-2">
         <div class="stat-box">
           <div class="stat-label">Cumulative Build Spend</div>
-          <div class="stat-value">[Record actual spend]</div>
+          <div class="stat-value">$0 beyond Claude subscription</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Est. Cost Per User Run</div>
@@ -216,10 +229,10 @@
       <div class="log-entry">
         <h3>Build 1 · Intent.md & Throwaway Prototype (Due Nov 9)</h3>
         <ul>
-          <li><strong>What shipped:</strong> [What you actually built; link your local prototype screenshot or GIF above.]</li>
-          <li><strong>Things learned with AI:</strong> [What you learned from AI practice and Terminus Episodes 1 and 2.]</li>
-          <li><strong>What broke / changed in PRD:</strong> [Fill in]</li>
-          <li><strong>Cost & time this week:</strong> $[0.00] · [0] hours</li>
+          <li><strong>What shipped:</strong> PRD v1 and a <a href="#live-demo">clickable home screen mockup</a> styled after Apple Maps. It draws NYU's real shuttle routes and stops, pulled from Passio GO's public feed, on top of an OpenStreetMap street map. Bus positions and arrival times are still simulated.</li>
+          <li><strong>Things learned with AI:</strong> Terminus Episodes 1 and 2 taught me how to get around in the terminal. I'd never bothered learning terminal commands before, and now I can see where they'd save me time. I've worked with AI coding agents before, so nothing new to report there yet.</li>
+          <li><strong>What broke / changed in PRD:</strong> I want Bussin in the App Store as a native iOS app, which means Xcode, and Xcode wasn't on my Mac. So this week's prototype is an HTML mockup, and the SwiftUI build waits on a macOS update and the Xcode install. The bigger surprise: Passio GO's live bus feed for NYU answers without a login. That changed the riskiest assumption from "can I get the data?" to "am I allowed to use it?" I was also surprised by how good the UI looked on the first pass.</li>
+          <li><strong>Cost & time this week:</strong> $0.00 beyond my Claude subscription · 4 hours</li>
         </ul>
       </div>
 
