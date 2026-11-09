@@ -1,45 +1,58 @@
-# [Project Name]
+# Bussin
 
-> **One-line pitch:** [Who is this for, and what job does it do for them?]
+> An iPhone app for NYU's free shuttle buses. It shows where your bus is, when it will reach your stop, and which shuttle gets you where you're going.
 
-- **Builder:** [Your Name] (`@github-handle`)
-- **Pod:** [Pod Name / Number]
-- **Product Page & Living PRD:** [Add your GitHub Pages URL]
-- **App:** runs locally through Week 4; add a cloud URL in Build 5.
+- **Builder:** Chris Schwaiger (`@schwaigs-cj`)
+- **Pod:** [add pod]
+- **Product page and living PRD:** https://building-with-ai-f26.github.io/cjs10016-bussin/
+- **Interactive prototype:** https://building-with-ai-f26.github.io/cjs10016-bussin/prototype/ (works on a phone)
+- **App:** a native iOS app in SwiftUI with Apple Maps, starting in Build 2. A cloud or TestFlight link comes in Build 5.
 
-## Start here: Build 1
+## Why
 
-**Due Monday, November 9 at noon, New York time.** No class November 3; keep building that week.
+NYU students ride the shuttles for free, but Passio GO, the app NYU points them to, is close to unusable. It puts buses on a map, but it won't tell you how far the next bus is from your stop or when it will get there, and you can't type in a destination to find out which shuttle to take. Bussin answers those questions first.
 
-1. Join the [class organization](https://github.com/building-with-ai-f26), then use this template to create a **public** repo named `<netid>-<project-slug>`. Ask Christian or Hew if the organization is missing from the owner list.
-2. Set up Git and one coding agent during the week of October 27. Follow the [Icerynk setup guide](https://www.icerynk.com/c/fa26-tech-gb-2160-dm2-f2/content/pre-class-setup-github-openrouter-your-coding-agent).
-3. Publish [`docs/index.html`](./docs/index.html): **Settings → Pages → Deploy from a branch → main → /docs → Save**. When deployment finishes, open `https://building-with-ai-f26.github.io/<your-repo-name>/`.
-4. Fill in PRD v1: a reachable user, their painful before/after workflow, one core workflow, and three non-goals.
-5. Build a rough local prototype. Add a screenshot or GIF and an honest Build 1 log to the Product Page, including progress, learning, problems, costs, and hours.
-6. Push meaningful commits on **at least two separate days each week outside class**, including the November 3 break.
-7. Submit your **Product Page URL and repository URL in Icerynk**. Come ready to demo the prototype in two minutes on November 10.
+## Where it stands (Nov 9, 2026)
 
-Create your PostHog account in Week 1. Install it on the Product Page and local app in **Build 2**, then verify events. The Product Page is public from Build 1; the app can stay local through Week 4.
+- **Build 1 is done.** It includes PRD v1, a home screen mockup, and an interactive prototype that runs in the browser. You can search for a place like NYU Tandon, compare shuttle options against walking, and tap any stop or route. The routes and stops are real NYU data. The buses and arrival times are simulated.
+- **Biggest finding so far:** Passio GO's live feed for NYU answers without a login, so bus positions are reachable. What I don't know yet is whether Passio allows a third-party app to use that feed. That's the riskiest open question.
+- **Next, for Build 2 (due Nov 16):** the first SwiftUI version reading the real feed, plus PostHog analytics.
+- **Logo:** four rounds of concepts are in [`logo/`](./logo/). Three finalists are left, all based on NYC signage, and I haven't picked one yet.
 
 ## Repository map
 
-| File / folder | Purpose |
+| Path | What it is |
 | --- | --- |
-| [`docs/index.html`](./docs/index.html) | Required public pitch, living PRD, and weekly build log. Update with actual work and evidence. |
-| [`Intent.md`](./Intent.md), [`Plan.md`](./Plan.md), [`journal/`](./journal/) | Optional drafting aids. No duplicate submission is required. |
-| [`AGENTS.md`](./AGENTS.md) | Local run commands, project context, and agent rules. Build 2 onward. |
-| [`tests/`](./tests/) | Verification guidance. Build 4 offers Track A domain evals **or** Track B user replays. |
-| [`SPONSOR_MEMO.md`](./SPONSOR_MEMO.md) | One-page recommendation backed by actual usage, full costs, and risks. Due December 14 at noon. |
+| [`docs/index.html`](./docs/index.html) | Product page: the pitch, the living PRD, and the weekly build log. Published with GitHub Pages. |
+| [`docs/prototype/`](./docs/prototype/) | The interactive prototype, a single self-contained HTML file. |
+| [`docs/mockup/`](./docs/mockup/) | The first home screen mockup, kept for reference. |
+| [`tools/prototype/`](./tools/prototype/) | Scripts and a Passio data snapshot that rebuild the prototype. See its README. |
+| [`logo/`](./logo/) | Logo and app icon exploration, one page per round. |
+| [`AGENTS.md`](./AGENTS.md) | Run commands, project context, and rules for the coding agent. |
+| [`tests/`](./tests/) | Verification for Build 4. |
+| [`SPONSOR_MEMO.md`](./SPONSOR_MEMO.md) | The final recommendation memo, due Dec 14. |
+| [`Intent.md`](./Intent.md), [`Plan.md`](./Plan.md), [`journal/`](./journal/) | Optional drafting notes from the course template. |
 
-[Icerynk](https://www.icerynk.com/c/fa26-tech-gb-2160-dm2-f2/content) holds the assignment instructions and submissions.
+## Run it locally
 
-## Local setup
-
-Clone **your own repository** and ask your coding agent to document the exact install and run commands here and in `AGENTS.md`.
+The prototype is static HTML with no dependencies.
 
 ```bash
-git clone https://github.com/building-with-ai-f26/<your-repo-name>.git
-cd <your-repo-name>
+git clone https://github.com/building-with-ai-f26/cjs10016-bussin.git
+cd cjs10016-bussin
+python3 -m http.server 8000 --directory docs
 ```
 
-If your app needs API keys, use a local environment file such as `.env`. Keep private keys out of source code, browser code, screenshots, and commits. The template ignores `.env`; `.env.example` contains placeholders only.
+Then open http://localhost:8000/prototype/. Opening `docs/prototype/index.html` straight from Finder works too.
+
+To change the prototype's map or route data, follow [`tools/prototype/README.md`](./tools/prototype/README.md). It covers re-downloading the street data and refreshing the Passio snapshot.
+
+Instructions for the iOS app will go here and in `AGENTS.md` once the Xcode project exists. You'll need a Mac with Xcode.
+
+## Keys and secrets
+
+Nothing needs an API key yet. Passio's feed is public, and the prototype map is drawn from OpenStreetMap data. If that changes, keys go in a local `.env` file, which git ignores, and placeholders go in `.env.example`.
+
+---
+
+Built for *Building with AI* at NYU Stern, Fall 2026. Assignment instructions and submissions live on [Icerynk](https://www.icerynk.com/c/fa26-tech-gb-2160-dm2-f2/content). Map data © OpenStreetMap contributors.
