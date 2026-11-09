@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bussin Logo Shortlist</title>
+<style>
+  :root { --bg: #f2f2f7; --card: #ffffff; --text: #1c1c1e; --muted: #6e6e73; --line: #e5e5ea; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #000; --card: #1c1c1e; --text: #f2f2f7; --muted: #98989d; --line: #38383a; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 1200px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .lede { color: var(--muted); margin: 0 0 28px; max-width: 720px; line-height: 1.5; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(540px, 1fr)); gap: 20px; }
+  @media (max-width: 580px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+  .card h2 { margin: 0; font-size: 19px; letter-spacing: -0.01em; }
+  .card h2 span { color: var(--muted); font-weight: 500; }
+  .mark { display: flex; justify-content: center; align-items: center; min-height: 180px; }
+  .mark svg { max-width: 100%; height: auto; }
+  .icons { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .icon { display: block; border-radius: 22.4%; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.14); flex: none; }
+  .wall { border-radius: 14px; padding: 8px; display: grid; place-items: center; gap: 4px; font-size: 11px; color: rgba(255,255,255,.7); }
+  .wall.light { background: linear-gradient(160deg, #cfe3ff, #f6e6ff); color: #444; }
+  .wall.dark { background: linear-gradient(160deg, #1b1f3a, #0b0b10); }
+  .wall.tint { background: linear-gradient(160deg, #3a2a10, #120c04); }
+  .wall.dark .icon { filter: brightness(.82) contrast(1.08); }
+  .wall.tint .icon { filter: grayscale(1) sepia(1) saturate(2.2) brightness(.9); }
+  .alt { display: flex; gap: 10px; align-items: flex-end; margin-left: auto; }
+  .alt .icon { box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .why { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
+  .why b { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bussin logo shortlist, refined</h1>
+  <p class="lede">Your four picks, improved. Each icon is shown at 120 pt and as it would look in iOS default, dark and tinted modes, plus small sizes. Dark and tinted are approximations; the real versions get tuned in Apple's Icon Composer.</p>
+  <div class="grid" id="grid"></div>
+</main>
+<script>
+const HEL = `font-family:'Helvetica Neue',Helvetica,Arial,sans-serif`;
+let seed = 7;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const pick = a => a[Math.floor(rnd() * a.length)];
+
+/* Rasterize text into a tile grid using a canvas, so mosaic letters use a real typeface. */
+function sampleText(text, cols, rows, { font = "700 10px 'Helvetica Neue', Helvetica, Arial", box, spacing = 0 } = {}) {
+  const S = 12, cv = document.createElement("canvas");
+  cv.width = cols * S; cv.height = rows * S;
+  const g = cv.getContext("2d");
+  g.fillStyle = "#000"; g.textAlign = "center"; g.textBaseline = "alphabetic";
+  const [bx, by, bw, bh] = box;                     // target box in tiles
+  g.font = font.replace(/\d+px/, "100px");
+  if (spacing) g.letterSpacing = spacing + "px";
+  const m = g.measureText(text);
+  const h = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
+  const sx = (bw * S) / m.width, sy = (bh * S) / h;
+  g.save(); g.translate((bx + bw / 2) * S, (by + bh) * S - m.actualBoundingBoxDescent * sy);
+  g.scale(sx, sy); g.fillText(text, 0, 0); g.restore();
+  const d = g.getImageData(0, 0, cv.width, cv.height).data, on = new Set();
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    let a = 0;
+    for (let j = 2; j < S; j += 3) for (let i = 2; i < S; i += 3) a += d[((y * S + j) * cv.width + x * S + i) * 4 + 3];
+    if (a / 16 / 255 > 0.42) on.add(`${x},${y}`);
+  }
+  return on;
+}
+
+/* 1. Mosaic */
+function mosaic({ text = "BUSSIN", cols = 92, rows = 30, tile = 5.2, arrow = true, band = 3, textBox, seedV = 11, spacing = 0 }) {
+  seed = seedV;
+  const b = band + 2;     // gray, ornament band, gray
+  const tb = textBox || [b + 3, b + 2, cols - 2 * b - 6, rows - 2 * b - (arrow ? 8 : 4)];
+  const on = sampleText(text, cols, rows, { box: tb, spacing });
+  if (arrow) {
+    const ay = tb[1] + tb[3] + 4, x0 = tb[0] + 3, x1 = tb[0] + tb[2] + 1;
+    for (let x = x0; x <= x1 - 4; x++) { on.add(`${x},${ay}`); on.add(`${x},${ay + 1}`); }           // shaft
+    for (let k = 0; k <= 4; k++) {                                                                // head: solid triangle
+      const half = Math.min(k, 3);
+      for (let y = ay - half; y <= ay + 1 + half; y++) on.add(`${x1 - k},${y}`);
+    }
+    for (let k = 1; k <= 2; k++) for (const dx of [0, 1]) { on.add(`${x0 - k + dx},${ay - k}`); on.add(`${x0 - k + dx},${ay + 1 + k}`); }  // fletching
+  }
+  const blues = ["#1b2a8c", "#22339e", "#16226f", "#2a3fae", "#101a55", "#1e2f93", "#24369f"];
+  const whites = ["#f4f1e8", "#ece7da", "#faf8f2", "#e6e0d0", "#f0ebdf"];
+  const tans = ["#d8b878", "#cda966", "#e3c891"], browns = ["#7a5a2e", "#6b4e27"], grays = ["#8a8a86", "#9c9b96", "#7d7c78"];
+  let s = `<rect width="${cols * tile}" height="${rows * tile}" fill="#b5b0a3"/>`;
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const ring = Math.min(x, y, cols - 1 - x, rows - 1 - y);
+    let col;
+    if (ring === 0 || ring === b - 1) col = pick(grays);
+    else if (ring < b - 1) {
+      // vine-like band: alternating diamonds of tan on blue
+      const along = (x < b || x >= cols - b) ? y : x, depth = ring - 1, mid = (band - 1) / 2;
+      const phase = along % 6, dist = Math.abs(phase - 2.5);
+      col = Math.abs(depth - mid) <= (2.5 - dist) * 0.7 ? (phase === 2 || phase === 3 ? pick(browns) : pick(tans)) : pick(blues);
+    } else col = on.has(`${x},${y}`) ? pick(whites) : pick(blues);
+    const j = (rnd() - 0.5) * 0.7;
+    s += `<rect x="${(x * tile + 0.5 + j).toFixed(2)}" y="${(y * tile + 0.5 - j).toFixed(2)}" width="${(tile - 1.05).toFixed(2)}" height="${(tile - 1.05).toFixed(2)}" rx=".9" fill="${col}"/>`;
+  }
+  return { w: cols * tile, h: rows * tile, s };
+}
+
+/* 8. LED dot matrix (5×7 glyphs) */
+const F = {
+  B: ["11110","10001","10001","11110","10001","10001","11110"], U: ["10001","10001","10001","10001","10001","10001","01110"],
+  S: ["01111","10000","10000","01110","00001","00001","11110"], I: ["111","010","010","010","010","010","111"],
+  N: ["10001","11001","10101","10011","10001","10001","10001"], Y: ["10001","10001","01010","00100","00100","00100","00100"],
+};
+function glyphCells(word, sc = 1) {
+  const on = new Set(); let x = 0;
+  for (const ch of word) { const g = F[ch]; g.forEach((r, y) => [...r].forEach((c, i) => { if (c === "1") for (let a = 0; a < sc; a++) for (let b = 0; b < sc; b++) on.add(`${(x + i) * sc + a},${y * sc + b}`); })); x += g[0].length + 1; }
+  return { w: (x - 1) * sc, h: 7 * sc, on };
+}
+function led({ lines, scale = 1, pitch = 8, cols, rows, gapY = 2, lights = false, id = "l" }) {
+  const cs = lines.map(l => glyphCells(l, scale));
+  const textH = cs.reduce((a, c) => a + c.h, 0) + (cs.length - 1) * gapY;
+  const on = new Set(); let oy = Math.floor((rows - textH) / 2);
+  for (const c of cs) { const ox = Math.floor((cols - c.w) / 2); for (const k of c.on) { const [x, y] = k.split(",").map(Number); on.add(`${ox + x},${oy + y}`); } oy += c.h + gapY; }
+  let dim = "", lit = "";
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const cx = (x + 0.5) * pitch, cy = (y + 0.5) * pitch + (lights ? pitch * 2 : 0);
+    if (on.has(`${x},${y}`)) lit += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(pitch * 0.42).toFixed(2)}"/>`;
+    else dim += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${(pitch * 0.32).toFixed(2)}"/>`;
+  }
+  const W = cols * pitch, H = rows * pitch + (lights ? pitch * 3 : 0);
+  const lamps = lights ? [0.12, 0.3, 0.7, 0.88].map(f => `<rect x="${W * f - pitch * 1.2}" y="${pitch * 0.45}" width="${pitch * 2.4}" height="${pitch * 0.9}" rx="${pitch * 0.3}" fill="#ff5a1f" filter="url(#lg${id})"/>`).join("") : "";
+  return { w: W, h: H, s: `<defs><filter id="lg${id}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="${pitch * 0.35}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <radialGradient id="ld${id}"><stop offset="0" stop-color="#ffd27a"/><stop offset=".55" stop-color="#ff9a1a"/><stop offset="1" stop-color="#f07a00"/></radialGradient></defs>
+    <rect width="${W}" height="${H}" fill="#0c0a08"/>${lamps}<g fill="#2b1c0b">${dim}</g><g fill="url(#ld${id})" filter="url(#lg${id})">${lit}</g>` };
+}
+
+const svg = (w, h, inner, out) => `<svg width="${out}" height="${(out * h / w).toFixed(0)}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+const icon = (inner, size) => `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 100 100">${inner}</svg>`;
+const ROUTES = [["A", "#f7b6d2", "#1c1c1e"], ["B", "#9370DB", "#fff"], ["C", "#4169E1", "#fff"], ["E", "#CD5C5C", "#fff"], ["F", "#3CB371", "#1c1c1e"], ["G", "#87CEFA", "#1c1c1e"], ["W", "#FFA500", "#1c1c1e"]];
+const tileWall = (w, h, t = 22, c = "#2a2722", g = "#1c1a17") => { let s = `<rect width="${w}" height="${h}" fill="${g}"/>`; for (let y = 0; y < h; y += t / 2) for (let x = -((y / (t / 2)) % 2) * t / 2; x < w; x += t) s += `<rect x="${x + 1}" y="${y + 1}" width="${t - 2}" height="${t / 2 - 2}" rx="1.5" fill="${c}"/>`; return s; };
+function lamp(id, x, y, w, topH, botH, letter, fs, ls = 0) {
+  return `<defs>
+    <linearGradient id="top${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#f1f1ea"/><stop offset="1" stop-color="#dcdcd2"/></linearGradient>
+    <linearGradient id="bot${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6ff7a"/><stop offset=".5" stop-color="#a6ee1c"/><stop offset="1" stop-color="#6fc400"/></linearGradient>
+    <filter id="glow${id}" x="-40%" y="-60%" width="180%" height="240%"><feGaussianBlur stdDeviation="${w * 0.07}"/></filter></defs>
+    <ellipse cx="${x + w / 2}" cy="${y + topH + botH * 0.6}" rx="${w * 0.75}" ry="${botH * 1.1}" fill="#9dff2a" opacity=".45" filter="url(#glow${id})"/>
+    <rect x="${x}" y="${y + topH}" width="${w}" height="${botH}" rx="${w * 0.03}" fill="url(#bot${id})"/>
+    <rect x="${x + w * 0.04}" y="${y + topH + botH * 0.08}" width="${w * 0.92}" height="${botH * 0.18}" rx="${botH * 0.09}" fill="#fff" opacity=".35"/>
+    <rect x="${x}" y="${y}" width="${w}" height="${topH}" rx="${w * 0.03}" fill="url(#top${id})"/>
+    <rect x="${x + w * 0.04}" y="${y + topH * 0.06}" width="${w * 0.92}" height="${topH * 0.12}" rx="${topH * 0.06}" fill="#fff" opacity=".8"/>
+    <rect x="${x - w * 0.02}" y="${y + topH - 1}" width="${w * 1.04}" height="${Math.max(2, topH * 0.05)}" fill="#1a1a1a" opacity=".55"/>
+    <text x="${x + w / 2}" y="${y + topH * 0.8}" text-anchor="middle" fill="#3442c4" style="${HEL};font-weight:700;font-stretch:condensed;font-size:${fs}px;letter-spacing:${ls}px">${letter}</text>
+    <rect x="${x - w * 0.03}" y="${y + topH + botH}" width="${w * 1.06}" height="${Math.max(3, botH * 0.12)}" rx="2" fill="#111"/>`;
+}
+
+const CONCEPTS = [
+  {
+    title: "Mosaic", sub: "subway station tiles",
+    why: "<b>What changed:</b> the letters now come from a real typeface laid into tiles, so BUSSIN reads cleanly. The border has a tan diamond band like the old station frames, and the arrow is now a proper “this way” arrow. The icon is a single tiled B.",
+    mark: () => { const m = mosaic({ rows: 34, textBox: [13, 6, 68, 13], spacing: 16 }); return svg(m.w, m.h, m.s, 480); },
+    icon: () => { const m = mosaic({ text: "B", cols: 24, rows: 24, tile: 100 / 24, arrow: false, band: 2, textBox: [7, 6, 10, 12], seedV: 5 }); return m.s; },
+  },
+  {
+    title: "Station sign", sub: "black enamel, Helvetica, route badges",
+    why: "<b>What changed:</b> the round MTA-style bullets are now rounded squares, the same route badges the app uses, so the logo and the app match and it no longer looks like a subway line. The icon keeps the white rule and stacks “Bus” over three badges.",
+    mark: () => svg(480, 220, `<rect width="480" height="220" rx="8" fill="#111"/><rect x="20" y="22" width="440" height="3" fill="#fff"/>
+      <text x="20" y="100" fill="#fff" style="${HEL};font-weight:700;font-size:78px;letter-spacing:-2px">Bussin</text>
+      <text x="22" y="140" fill="#d0d0d0" style="${HEL};font-weight:500;font-size:24px">NYU Shuttles · Live</text>
+      ${ROUTES.map(([l, c, t], i) => `<rect x="${22 + i * 48}" y="162" width="38" height="38" rx="9" fill="${c}"/><text x="${41 + i * 48}" y="189" text-anchor="middle" fill="${t}" style="${HEL};font-weight:700;font-size:23px">${l}</text>`).join("")}`, 480),
+    icon: () => `<rect width="100" height="100" fill="#111"/><rect x="11" y="16" width="78" height="2.2" fill="#fff"/>
+      <text x="10" y="58" fill="#fff" style="${HEL};font-weight:700;font-size:38px;letter-spacing:-1.5px">Bus</text>
+      ${ROUTES.filter(r => "AEF".includes(r[0])).map(([l, c, t], i) => `<rect x="${11 + i * 19}" y="69" width="15" height="15" rx="3.6" fill="${c}"/><text x="${18.5 + i * 19}" y="80.5" text-anchor="middle" fill="${t}" style="${HEL};font-weight:700;font-size:10.5px">${l}</text>`).join("")}`,
+  },
+  {
+    title: "Station lamp", sub: "alternate icon only, chosen in Settings",
+    why: "<b>Decision:</b> dropped as the main logo. The lamp icon stays as an optional retro app icon people can switch to in the app's Settings (iOS supports alternate icons). The wordmark above is for reference only.",
+    mark: () => svg(480, 240, tileWall(480, 240) + lamp("w", 80, 34, 320, 104, 66, "BUSSIN", 82, 6), 480),
+    icon: () => tileWall(100, 100, 14) + lamp("i", 25, 15, 50, 40, 30, "B", 34),
+  },
+  {
+    title: "Bus display", sub: "orange LED destination sign",
+    why: "<b>What changed:</b> warmer LEDs with a soft glow and the unlit dots visible behind them, like a real bus sign. There are two icon options: stacked BUS/SIN, or a single large B that stays readable even at 29 pt.",
+    mark: () => { const m = led({ lines: ["BUSSIN"], pitch: 9, cols: 41, rows: 13, id: "w" }); return svg(m.w, m.h, `<rect width="${m.w}" height="${m.h}" rx="12" fill="#0c0a08"/>${m.s}`, 480); },
+    icon: () => { const m = led({ lines: ["BUS", "SIN"], pitch: 5, cols: 20, rows: 20, id: "i1" }); return `<g transform="scale(${100 / m.w})">${m.s}</g>`; },
+    alt: () => { const m = led({ lines: ["B"], scale: 2, pitch: 5, cols: 20, rows: 20, id: "i2" }); return `<g transform="scale(${100 / m.w})">${m.s}</g>`; },
+  },
+];
+
+document.getElementById("grid").innerHTML = CONCEPTS.map((c, i) => {
+  const ic = c.icon(), alt = c.alt ? c.alt() : null;
+  return `<section class="card">
+    <h2>${[1, 2, 5, 8][i]}. ${c.title} <span>· ${c.sub}</span></h2>
+    <div class="mark">${c.mark()}</div>
+    <div class="icons">
+      ${icon(ic, 120)}
+      ${["light", "dark", "tint"].map(m => `<div class="wall ${m}">${icon(ic, 52)}<span>${{ light: "Default", dark: "Dark", tint: "Tinted" }[m]}</span></div>`).join("")}
+      <div class="alt">${icon(ic, 40)}${icon(ic, 29)}</div>
+    </div>
+    ${alt ? `<div class="icons">${icon(alt, 120)}${["light", "dark", "tint"].map(m => `<div class="wall ${m}">${icon(alt, 52)}<span>${{ light: "Default", dark: "Dark", tint: "Tinted" }[m]}</span></div>`).join("")}<div class="alt">${icon(alt, 40)}${icon(alt, 29)}</div></div>` : ""}
+    <p class="why">${c.why}</p>
+  </section>`;
+}).join("");
+</script>
+</body>
+</html>

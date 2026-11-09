@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bussin NYC Logos</title>
+<style>
+  :root { --bg: #f2f2f7; --card: #ffffff; --text: #1c1c1e; --muted: #6e6e73; --line: #e5e5ea; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #000; --card: #1c1c1e; --text: #f2f2f7; --muted: #98989d; --line: #38383a; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 1200px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .lede { color: var(--muted); margin: 0 0 28px; max-width: 720px; line-height: 1.5; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(520px, 1fr)); gap: 20px; }
+  @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+  .card h2 { margin: 0; font-size: 19px; letter-spacing: -0.01em; }
+  .card h2 span { color: var(--muted); font-weight: 500; }
+  .mark { display: flex; justify-content: center; align-items: center; min-height: 170px; }
+  .mark svg { max-width: 100%; height: auto; }
+  .icons { display: flex; align-items: flex-end; gap: 14px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .icon { display: block; border-radius: 22.4%; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.14); flex: none; }
+  .icons .lbl { margin-left: auto; color: var(--muted); font-size: 12px; align-self: center; }
+  .why { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bussin logos, inspired by NYC</h1>
+  <p class="lede">Nine directions based on your references. Each has a wordmark (for the product page and splash screen) and an app icon at 120, 60 and 29 pt. They borrow the look of NYC signage, not the actual MTA or hotel designs.</p>
+  <div class="grid" id="grid"></div>
+</main>
+<script>
+/* ---------- tiny pixel font (5×7, I is 3 wide) ---------- */
+const F = {
+  B: ["11110","10001","10001","11110","10001","10001","11110"],
+  U: ["10001","10001","10001","10001","10001","10001","01110"],
+  S: ["01111","10000","10000","01110","00001","00001","11110"],
+  I: ["111","010","010","010","010","010","111"],
+  N: ["10001","11001","10101","10011","10001","10001","10001"],
+};
+function cells(word) {           // -> {w, h, on: Set("x,y")}
+  const on = new Set(); let x = 0;
+  for (const ch of word) {
+    const g = F[ch];
+    g.forEach((row, y) => [...row].forEach((c, i) => { if (c === "1") on.add(`${x + i},${y}`); }));
+    x += g[0].length + 1;
+  }
+  return { w: x - 1, h: 7, on };
+}
+let seed = 7;
+const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const pick = a => a[Math.floor(rnd() * a.length)];
+
+/* ---------- 1. mosaic ---------- */
+function mosaic({ word = "BUSSIN", scale = 2, tile = 6, arrow = true, pad = 3, border = true, W = null, H = null }) {
+  seed = 11;
+  const c = cells(word);
+  const textW = c.w * scale, textH = c.h * scale;
+  const inner = { w: W ?? textW + pad * 2, h: H ?? textH + pad * 2 + (arrow ? 5 : 0) };
+  const b = border ? 4 : 0;
+  const cols = inner.w + b * 2, rows = inner.h + b * 2;
+  const ox = b + Math.floor((inner.w - textW) / 2), oy = b + (H ? Math.floor((inner.h - textH - (arrow ? 5 : 0)) / 2) : pad);
+  const lit = new Set();
+  for (const k of c.on) { const [x, y] = k.split(",").map(Number); for (let i = 0; i < scale; i++) for (let j = 0; j < scale; j++) lit.add(`${ox + x * scale + i},${oy + y * scale + j}`); }
+  if (arrow) {
+    const ay = oy + textH + 3, ax0 = ox + 2, ax1 = ox + textW - 1;
+    for (let x = ax0; x <= ax1 - 2; x++) lit.add(`${x},${ay}`);
+    for (let k = 0; k <= 2; k++) { lit.add(`${ax1 - k},${ay - k}`); lit.add(`${ax1 - k},${ay + k}`); }
+    lit.add(`${ax0 - 1},${ay - 1}`); lit.add(`${ax0 - 1},${ay + 1}`);
+  }
+  const blues = ["#1b2a8c", "#22339e", "#16226f", "#2a3fae", "#101a55", "#1e2f93"];
+  const whites = ["#f4f1e8", "#ece7da", "#faf8f2", "#e6e0d0"];
+  const tans = ["#d8c08f", "#cdb27a", "#e3cfa3"], grays = ["#8a8a86", "#9c9b96", "#7d7c78"];
+  let s = `<rect width="${cols * tile}" height="${rows * tile}" fill="#b7b2a6"/>`;
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    let col;
+    const inB = x < b || y < b || x >= cols - b || y >= rows - b;
+    if (inB) {
+      const ring = Math.min(x, y, cols - 1 - x, rows - 1 - y);
+      col = ring === b - 1 ? pick(grays) : ((x + y) % 2 ? pick(tans) : pick(blues));
+    } else col = lit.has(`${x},${y}`) ? pick(whites) : pick(blues);
+    const j = (rnd() - 0.5) * 0.6;
+    s += `<rect x="${(x * tile + 0.5 + j).toFixed(2)}" y="${(y * tile + 0.5 - j).toFixed(2)}" width="${tile - 1.1}" height="${tile - 1.1}" rx=".8" fill="${col}"/>`;
+  }
+  return { w: cols * tile, h: rows * tile, s };
+}
+
+/* ---------- 8. LED dot matrix ---------- */
+function led({ lines = ["BUSSIN"], pitch = 7, padX = 3, padY = 2, W = null, H = null }) {
+  const cs = lines.map(cells);
+  const textW = Math.max(...cs.map(c => c.w)), textH = cs.length * 7 + (cs.length - 1) * 2;
+  const cols = W ?? textW + padX * 2, rows = H ?? textH + padY * 2;
+  const on = new Set();
+  cs.forEach((c, li) => {
+    const ox = Math.floor((cols - c.w) / 2), oy = Math.floor((rows - textH) / 2) + li * 9;
+    for (const k of c.on) { const [x, y] = k.split(",").map(Number); on.add(`${ox + x},${oy + y}`); }
+  });
+  let dim = "", lit = "";
+  for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+    const cx = (x + 0.5) * pitch, cy = (y + 0.5) * pitch;
+    if (on.has(`${x},${y}`)) lit += `<circle cx="${cx}" cy="${cy}" r="${pitch * 0.4}"/>`;
+    else dim += `<circle cx="${cx}" cy="${cy}" r="${pitch * 0.33}"/>`;
+  }
+  return { w: cols * pitch, h: rows * pitch,
+    s: `<defs><filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="${pitch * 0.35}" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <rect width="${cols * pitch}" height="${rows * pitch}" fill="#0b0805"/><g fill="#2a1a08">${dim}</g><g fill="#ff9417" filter="url(#glow)">${lit}</g>` };
+}
+
+const svg = (w, h, inner, out = w) => `<svg width="${out}" height="${(out * h / w).toFixed(0)}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+const iconSvg = (inner, size, vb = 100) => `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 ${vb} ${vb}">${inner}</svg>`;
+const HEL = `font-family:'Helvetica Neue',Helvetica,Arial,sans-serif`;
+const ROUTES = [["A", "#f7b6d2", "#1c1c1e"], ["B", "#9370DB", "#fff"], ["C", "#4169E1", "#fff"], ["E", "#CD5C5C", "#fff"], ["F", "#3CB371", "#1c1c1e"], ["G", "#87CEFA", "#1c1c1e"], ["W", "#FFA500", "#1c1c1e"]];
+
+const CONCEPTS = [
+  {
+    title: "Mosaic", sub: "subway station tiles",
+    why: "BUSSIN laid out in small ceramic tiles, white on cobalt with a patterned border, and the arrow from the old “To Subway” signs. It's the most NYC of the eight, and the hand-laid look feels warm and well made.",
+    mark: () => { const m = mosaic({ scale: 3, tile: 5 }); return svg(m.w, m.h, m.s, 470); },
+    icon: () => { const m = mosaic({ word: "B", scale: 2, tile: 5, arrow: false, W: 16, H: 16 }); return { inner: `<g transform="scale(${100 / m.w})">${m.s}</g>` }; },
+  },
+  {
+    title: "Station sign", sub: "black enamel with route bullets",
+    why: "Clean white Helvetica on black under a thin white rule, like a station entrance, with the NYU shuttle routes as colored bullets in their real Passio colors. It's the most legible option and looks like a real transit app.",
+    mark: () => svg(480, 220, `<rect width="480" height="220" rx="6" fill="#111"/><rect x="18" y="20" width="444" height="3" fill="#fff"/>
+      <text x="20" y="98" fill="#fff" style="${HEL};font-weight:700;font-size:76px;letter-spacing:-1.5px">Bussin</text>
+      <text x="22" y="138" fill="#fff" style="${HEL};font-weight:500;font-size:26px">NYU Shuttles</text>
+      ${ROUTES.map(([l, c, t], i) => `<circle cx="${40 + i * 50}" cy="182" r="20" fill="${c}"/><text x="${40 + i * 50}" y="190" text-anchor="middle" fill="${t}" style="${HEL};font-weight:700;font-size:23px">${l}</text>`).join("")}`, 470),
+    icon: () => ({ inner: `<rect width="100" height="100" fill="#111"/><rect x="10" y="15" width="80" height="2" fill="#fff"/>
+      <text x="10" y="58" fill="#fff" style="${HEL};font-weight:700;font-size:42px;letter-spacing:-1px">Bu</text>
+      ${ROUTES.filter(r => "AEF".includes(r[0])).map(([l, c, t], i) => `<circle cx="${19 + i * 19}" cy="77" r="8" fill="${c}"/><text x="${19 + i * 19}" y="81" text-anchor="middle" fill="${t}" style="${HEL};font-weight:700;font-size:11px">${l}</text>`).join("")}` }),
+  },
+  {
+    title: "Street sign", sub: "Bussin St",
+    why: "A green NYC street sign with a white border, so the app's name reads like a corner you'd stand on to catch the bus. The icon shortens it to “B St.” It's friendly, instantly local, and holds up at small sizes.",
+    mark: () => svg(480, 150, `<rect width="480" height="150" rx="14" fill="#0b6b3a"/><rect x="9" y="9" width="462" height="132" rx="9" fill="none" stroke="#fff" stroke-width="4"/>
+      <text x="70" y="104" fill="#fff" style="${HEL};font-weight:500;font-size:78px;letter-spacing:-.5px">Bussin</text>
+      <text x="340" y="104" fill="#fff" style="${HEL};font-weight:500;font-size:46px">St</text>`, 470),
+    icon: () => ({ inner: `<rect width="100" height="100" fill="#0b6b3a"/><rect x="8" y="8" width="84" height="84" rx="10" fill="none" stroke="#fff" stroke-width="3"/>
+      <text x="22" y="66" fill="#fff" style="${HEL};font-weight:500;font-size:48px">B</text><text x="58" y="66" fill="#fff" style="${HEL};font-weight:500;font-size:28px">St</text>` }),
+  },
+  {
+    title: "Fare card", sub: "the yellow-and-blue ride card",
+    why: "The yellow card with a blue fade and a black stripe that every New Yorker of a certain age had in their wallet. The heavy italic wordmark feels fast. It's nostalgic, but because it's a card, it could hint at a mobile ID feature your PRD rules out.",
+    mark: () => svg(480, 290, `<defs><linearGradient id="mc" x1="0" y1="0" x2="1" y2="1"><stop offset=".45" stop-color="#ffd200"/><stop offset="1" stop-color="#1446c8"/></linearGradient></defs>
+      <rect width="480" height="290" rx="20" fill="url(#mc)"/><rect y="232" width="480" height="34" fill="#151515"/>
+      <text x="34" y="128" fill="#1446c8" style="${HEL};font-weight:800;font-style:italic;font-size:92px;letter-spacing:-3px">Bussin</text>
+      <text x="38" y="166" fill="#1446c8" style="${HEL};font-weight:700;font-size:15px;letter-spacing:2px">FREE WITH YOUR NYU ID</text>
+      <path d="M418 40 l14 -16 l14 16 h-9 v26 h-10 v-26 z" fill="#151515"/>`, 470),
+    icon: () => ({ inner: `<defs><linearGradient id="mci" x1="0" y1="0" x2="1" y2="1"><stop offset=".42" stop-color="#ffd200"/><stop offset="1" stop-color="#1446c8"/></linearGradient></defs>
+      <rect width="100" height="100" fill="url(#mci)"/><rect y="78" width="100" height="11" fill="#151515"/>
+      <text x="14" y="64" fill="#1446c8" style="${HEL};font-weight:800;font-style:italic;font-size:58px;letter-spacing:-2px">B</text>` }),
+  },
+  {
+    title: "Station lamp", sub: "white, blue and glowing green",
+    why: "The old two-tone globe outside station entrances: a white box with blue letters over a glowing green one. On a home screen it would look lit up. It's the most atmospheric option and has the most going on.",
+    mark: () => svg(480, 220, `<defs><filter id="gl" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="14"/></filter>
+      <linearGradient id="gr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8ff5a"/><stop offset="1" stop-color="#7fd400"/></linearGradient></defs>
+      <rect width="480" height="220" fill="#16130f"/><rect x="70" y="128" width="340" height="62" rx="6" fill="#a8ff2a" filter="url(#gl)" opacity=".7"/>
+      <rect x="70" y="128" width="340" height="62" rx="6" fill="url(#gr)"/>
+      <rect x="70" y="30" width="340" height="96" rx="6" fill="#fbfbf6"/>
+      <text x="240" y="106" text-anchor="middle" fill="#3442c4" style="${HEL};font-weight:700;font-size:78px;letter-spacing:6px;font-stretch:condensed">BUSSIN</text>`, 470),
+    icon: () => ({ inner: `<defs><filter id="gli" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="7"/></filter>
+      <linearGradient id="gri" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d8ff5a"/><stop offset="1" stop-color="#7fd400"/></linearGradient></defs>
+      <rect width="100" height="100" fill="#16130f"/><rect x="24" y="54" width="52" height="30" rx="4" fill="#a8ff2a" filter="url(#gli)" opacity=".8"/>
+      <rect x="24" y="54" width="52" height="30" rx="4" fill="url(#gri)"/><rect x="24" y="16" width="52" height="37" rx="4" fill="#fbfbf6"/>
+      <text x="50" y="47" text-anchor="middle" fill="#3442c4" style="${HEL};font-weight:700;font-size:34px">B</text>` }),
+  },
+  {
+    title: "Subway seats", sub: "one letter per orange seat",
+    why: "A row of molded orange and yellow bucket seats from the old subway cars, with one letter pressed into each. It's playful and unmistakably New York without using any sign or logo.",
+    mark: () => {
+      const L = "BUSSIN".split(""), w = 70, gap = 8;
+      const seats = L.map((ch, i) => {
+        const x = 18 + i * (w + gap), c = i % 2 ? ["#f8b21c", "#9a5f00"] : ["#f26a1f", "#8f3204"];
+        return `<path d="M${x} 40 q0 -14 14 -14 h${w - 28} q14 0 14 14 v86 q0 14 -14 16 h-${w - 28} q-14 -2 -14 -16 z" fill="${c[0]}"/>
+          <path d="M${x + 8} 50 q0 -10 10 -10 h${w - 36} q10 0 10 10 v66 q0 10 -10 11 h-${w - 36} q-10 -1 -10 -11 z" fill="${c[1]}" opacity=".35"/>
+          <text x="${x + w / 2}" y="104" text-anchor="middle" fill="${c[1]}" style="${HEL};font-weight:800;font-size:48px">${ch}</text>
+          <text x="${x + w / 2}" y="102" text-anchor="middle" fill="#fff" opacity=".35" style="${HEL};font-weight:800;font-size:48px">${ch}</text>`;
+      }).join("");
+      return svg(500, 170, `<rect width="500" height="170" fill="#c9ccd0"/><rect y="148" width="500" height="22" fill="#9aa0a6"/>${seats}`, 470);
+    },
+    icon: () => ({ inner: `<rect width="100" height="100" fill="#c9ccd0"/><rect y="84" width="100" height="16" fill="#9aa0a6"/>
+      <path d="M22 26 q0 -12 12 -12 h32 q12 0 12 12 v52 q0 12 -12 13 h-32 q-12 -1 -12 -13 z" fill="#f26a1f"/>
+      <path d="M29 33 q0 -8 8 -8 h26 q8 0 8 8 v40 q0 8 -8 9 h-26 q-8 -1 -8 -9 z" fill="#c9520f" opacity=".35"/>
+      <text x="50" y="70" text-anchor="middle" fill="#8f3204" style="${HEL};font-weight:800;font-size:40px">B</text>
+      <text x="50" y="68.5" text-anchor="middle" fill="#fff" opacity=".35" style="${HEL};font-weight:800;font-size:40px">B</text>` }),
+  },
+  {
+    title: "Rooftop sign", sub: "big red letters over the skyline",
+    why: "Tall red block letters like the giant hotel sign over Midtown, glowing against a night sky. It's bold and confident, the most poster-like of the eight, and reads well as a large splash screen.",
+    mark: () => svg(480, 230, `<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d1124"/><stop offset="1" stop-color="#2a2f52"/></linearGradient>
+      <filter id="neon" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <rect width="480" height="230" fill="url(#sky)"/>
+      <g stroke="#3d4266" stroke-width="2">${Array.from({ length: 12 }, (_, i) => `<path d="M${30 + i * 38} 150 V60"/>`).join("")}<path d="M20 100 H460"/><path d="M20 150 H460"/></g>
+      <rect y="150" width="480" height="80" fill="#3a3330"/>${Array.from({ length: 24 }, (_, i) => `<rect x="${14 + i * 19.5}" y="${170 + (i % 3) * 18}" width="8" height="10" fill="${i % 4 ? "#5a504a" : "#e8c26a"}"/>`).join("")}
+      <text x="240" y="146" text-anchor="middle" fill="#e3263b" filter="url(#neon)" style="${HEL};font-weight:700;font-stretch:condensed;font-size:122px;letter-spacing:4px">BUSSIN</text>`, 470),
+    icon: () => ({ inner: `<defs><linearGradient id="skyi" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0d1124"/><stop offset="1" stop-color="#2a2f52"/></linearGradient>
+      <filter id="neoni" x="-10%" y="-20%" width="120%" height="140%"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+      <rect width="100" height="100" fill="url(#skyi)"/><rect y="86" width="100" height="14" fill="#3a3330"/>
+      <g fill="#e3263b" filter="url(#neoni)" style="${HEL};font-weight:700;font-stretch:condensed;font-size:40px" text-anchor="middle">
+        <text x="50" y="45">BUS</text><text x="50" y="82">SIN</text></g>` }),
+  },
+  {
+    title: "Bus display", sub: "orange LED destination sign",
+    why: "The glowing orange dot-matrix sign on the front of every city bus. It's the most bus-specific of the eight, and it fits the app's real-time feel. The icon stacks BUS over SIN, the way a two-line display would.",
+    mark: () => { const m = led({ lines: ["BUSSIN"], pitch: 9, padX: 4, padY: 3 }); return svg(m.w, m.h, `<rect width="${m.w}" height="${m.h}" rx="10" fill="#0b0805"/>${m.s}`, 470); },
+    icon: () => { const m = led({ lines: ["BUS", "SIN"], pitch: 5, W: 20, H: 20 }); return { inner: `<g transform="scale(${100 / m.w})">${m.s}</g>` }; },
+  },
+  {
+    title: "Packed letters", sub: "bus / sin squeezed into a bus",
+    why: "Inspired by the classic New York apple poster, with chunky lowercase letters stretched to fill a shape. Here the shape is a bus front, and the wheels and mirrors play the part of the stem and leaf. It's the warmest and most hand-made of the nine, and it's yours rather than a copy of a city sign.",
+    mark: () => svg(480, 250, `<rect width="480" height="250" fill="#fbf8ef"/><g transform="translate(36 6) scale(1.95)">${packed("w")}</g>
+      <text x="262" y="122" fill="#e8392a" style="${ROUND};font-size:58px">bussin</text>
+      <text x="266" y="154" fill="#9a9184" style="${HEL};font-weight:600;font-size:15px;letter-spacing:3px">NYU SHUTTLES</text>`, 470),
+    icon: () => ({ inner: `<rect width="100" height="100" fill="#fbf8ef"/><g transform="translate(10 3) scale(.8)">${packed("i")}</g>` }),
+  },
+];
+
+const ROUND = `font-family:ui-rounded,'SF Pro Rounded','Arial Rounded MT Bold',sans-serif;font-weight:900`;
+function packed(id) {
+  // hand-drawn chunky letters (thick round strokes) packed into a bus front on a 100×120 canvas
+  const body = "M14 14 Q14 5 25 5 H75 Q86 5 86 14 L89 92 Q89 104 76 104 H24 Q11 104 11 92 Z";
+  const letters = [
+    "M16.5 10 V53", "M16.5 30 H24.5 A8 8 0 0 1 32.5 38 V44 A8 8 0 0 1 24.5 52 H16.5",          // b
+    "M42.5 12 V43 A8 8 0 0 0 58.5 43 V12", "M58.5 40 V53",                                         // u
+    "M83.5 19 Q83.5 11 75.5 11 Q67.5 11 67.5 21 Q67.5 31 75.5 32 Q83.5 33 83.5 42 Q83.5 52 75.5 52 Q67.5 52 67.5 45", // s
+    "M33 66 Q33 59 24.5 59 Q16 59 16 69 Q16 79 24.5 80 Q33 81 33 90 Q33 101 24.5 101 Q16 101 16 93", // s
+    "M47 73 V104",                                                                                  // i
+    "M59.5 67 V104", "M59.5 82 Q59.5 68 71.5 68 Q83.5 68 83.5 82 V104",                             // n
+  ];
+  return `<defs><clipPath id="bus${id}"><path d="${body}"/></clipPath></defs>
+    <rect x="21" y="100" width="14" height="15" rx="4" fill="#2b2b2b"/><rect x="65" y="100" width="14" height="15" rx="4" fill="#2b2b2b"/>
+    <path d="M14 20 Q6 20 5 31" fill="none" stroke="#3b8a3e" stroke-width="3.2" stroke-linecap="round"/><rect x="0.5" y="29" width="8.5" height="15" rx="3" fill="#3b8a3e"/>
+    <path d="M86 20 Q94 20 95 31" fill="none" stroke="#3b8a3e" stroke-width="3.2" stroke-linecap="round"/><rect x="91" y="29" width="8.5" height="15" rx="3" fill="#3b8a3e"/>
+    <g clip-path="url(#bus${id})">
+      <g fill="none" stroke="#e8392a" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">${letters.map(d => `<path d="${d}"/>`).join("")}</g>
+      <circle cx="47" cy="63" r="5.2" fill="#e8392a"/>
+    </g>`;
+}
+
+document.getElementById("grid").innerHTML = CONCEPTS.map((c, i) => {
+  const ic = c.icon();
+  return `<section class="card">
+    <h2>${i + 1}. ${c.title} <span>· ${c.sub}</span></h2>
+    <div class="mark">${c.mark()}</div>
+    <div class="icons">${iconSvg(ic.inner, 120)}${iconSvg(ic.inner, 60)}${iconSvg(ic.inner, 29)}<span class="lbl">App icon · 120 · 60 · 29 pt</span></div>
+    <p class="why">${c.why}</p>
+  </section>`;
+}).join("");
+</script>
+</body>
+</html>

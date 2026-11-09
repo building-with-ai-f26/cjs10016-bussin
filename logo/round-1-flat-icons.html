@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bussin Icon Concepts</title>
+<style>
+  :root { --bg: #f2f2f7; --card: #ffffff; --text: #1c1c1e; --muted: #6e6e73; --line: #e5e5ea; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #000; --card: #1c1c1e; --text: #f2f2f7; --muted: #98989d; --line: #38383a; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 1120px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .lede { color: var(--muted); margin: 0 0 28px; max-width: 680px; line-height: 1.5; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+  .card { background: var(--card); border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 18px; }
+  .card h2 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+  .card h2 span { color: var(--muted); font-weight: 500; }
+  .hero { display: flex; justify-content: center; padding: 8px 0; }
+  .icon { display: block; border-radius: 22.4%; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.12); flex: none; }
+  .variants { display: flex; justify-content: space-between; gap: 8px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .variant { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+  .wall { border-radius: 16px; padding: 10px; display: grid; place-items: center; }
+  .wall.light { background: linear-gradient(160deg, #cfe3ff, #f6e6ff); }
+  .wall.dark { background: linear-gradient(160deg, #1b1f3a, #0b0b10); }
+  .wall.tint { background: linear-gradient(160deg, #3a2a10, #120c04); }
+  .sizes { display: flex; align-items: flex-end; gap: 14px; }
+  .lockup { display: flex; align-items: center; gap: 12px; border-top: 1px solid var(--line); padding-top: 16px; }
+  .word { font-family: ui-rounded, "SF Pro Rounded", -apple-system, sans-serif; font-weight: 800; font-size: 34px; letter-spacing: -0.02em; }
+  .why { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
+  .row { display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bussin app icon concepts</h1>
+  <p class="lede">Three directions for the iOS app icon, each shown the way iOS will show it: at full size, in the light, dark and tinted home screen modes, at small sizes, and next to the name. None of them uses NYU's torch or official purple, so the icon doesn't suggest the app is made by NYU.</p>
+  <div class="grid" id="grid"></div>
+</main>
+<script>
+// Each concept draws on a 100×100 canvas. Colors change per appearance (light / dark / tinted), like iOS 26 icons.
+const C = {
+  loop: {
+    title: "Loop", sub: "the b is a shuttle route",
+    why: "The lowercase b is drawn as a route line. The stem is the street, the bowl is the loop, the small dots are stops, and the yellow dot is a live bus. It's the most distinctive of the three and still reads at small sizes.",
+    pal: {
+      light: { bg1: "#3a2be0", bg2: "#8b3cf6", fg: "#ffffff", stop: "#5a34ea", bus: "#ffd60a", ring: "#ffffff" },
+      dark:  { bg1: "#1a1530", bg2: "#2a1c4d", fg: "#b9a7ff", stop: "#221a3e", bus: "#ffd60a", ring: "#221a3e" },
+      tint:  { bg1: "#141008", bg2: "#1d160b", fg: "#e9c27a", stop: "#1a140a", bus: "#fff0cc", ring: "#1a140a" },
+    },
+    svg: p => `
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.bg1}"/><stop offset="1" stop-color="${p.bg2}"/></linearGradient></defs>
+      <rect width="100" height="100" fill="url(#g)"/>
+      <g fill="none" stroke="${p.fg}" stroke-width="11" stroke-linecap="round">
+        <path d="M33 17 V61"/><circle cx="52" cy="61" r="19"/>
+      </g>
+      <circle cx="33" cy="33" r="3.2" fill="${p.stop}"/><circle cx="71" cy="61" r="3.2" fill="${p.stop}"/><circle cx="52" cy="80" r="3.2" fill="${p.stop}"/>
+      <circle cx="52" cy="42" r="7.5" fill="${p.bus}" stroke="${p.ring}" stroke-width="3"/>`,
+  },
+  pin: {
+    title: "Stop pin", sub: "a bus inside a map pin",
+    why: "A map pin with a bus in it, on school-bus yellow. You can tell what the app does at a glance, and the yellow stands out on any home screen. It's also the most generic of the three.",
+    pal: {
+      light: { bg1: "#ffd23f", bg2: "#ffaa00", pin: "#1c1c1e", bus: "#ffc21a", win: "#1c1c1e" },
+      dark:  { bg1: "#2a2210", bg2: "#1a1408", pin: "#ffc21a", bus: "#1f1a0d", win: "#ffc21a" },
+      tint:  { bg1: "#141008", bg2: "#1d160b", pin: "#e9c27a", bus: "#1a140a", win: "#e9c27a" },
+    },
+    svg: p => `
+      <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.bg1}"/><stop offset="1" stop-color="${p.bg2}"/></linearGradient></defs>
+      <rect width="100" height="100" fill="url(#g)"/>
+      <path d="M50 13C32.8 13 21 25.6 21 41.2 21 61 50 87 50 87S79 61 79 41.2C79 25.6 67.2 13 50 13Z" fill="${p.pin}"/>
+      <rect x="36" y="25" width="28" height="29" rx="6" fill="${p.bus}"/>
+      <rect x="40" y="29.5" width="20" height="10" rx="2.5" fill="${p.win}"/>
+      <circle cx="42.5" cy="47" r="2.4" fill="${p.win}"/><circle cx="57.5" cy="47" r="2.4" fill="${p.win}"/>
+      <rect x="38.5" y="53" width="5" height="5" rx="1.5" fill="${p.bus}"/><rect x="56.5" y="53" width="5" height="5" rx="1.5" fill="${p.bus}"/>`,
+  },
+  live: {
+    title: "Live bus", sub: "a bus sending a signal",
+    why: "A bus with the same live signal used next to arrival times in the app, so the icon and the app match. It says the main promise, a real-time bus, in one picture.",
+    pal: {
+      light: { bg1: "#2b8cff", bg2: "#0040dd", bus: "#ffffff", win: "#1a5ee8", sig: "#ffd60a" },
+      dark:  { bg1: "#0f1c33", bg2: "#081020", bus: "#8ec2ff", win: "#0c1729", sig: "#ffd60a" },
+      tint:  { bg1: "#141008", bg2: "#1d160b", bus: "#e9c27a", win: "#1a140a", sig: "#fff0cc" },
+    },
+    svg: p => `
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.bg1}"/><stop offset="1" stop-color="${p.bg2}"/></linearGradient></defs>
+      <rect width="100" height="100" fill="url(#g)"/>
+      <rect x="18" y="36" width="44" height="42" rx="9" fill="${p.bus}"/>
+      <rect x="23.5" y="42" width="33" height="15" rx="3.5" fill="${p.win}"/>
+      <circle cx="28" cy="67" r="3.6" fill="${p.win}"/><circle cx="52" cy="67" r="3.6" fill="${p.win}"/>
+      <rect x="22" y="76" width="9" height="9" rx="2.5" fill="${p.bus}"/><rect x="49" y="76" width="9" height="9" rx="2.5" fill="${p.bus}"/>
+      <circle cx="68" cy="31" r="4.6" fill="${p.sig}"/>
+      <g fill="none" stroke="${p.sig}" stroke-width="5.5" stroke-linecap="round">
+        <path d="M68 20a11 11 0 0 1 11 11"/><path d="M68 10a21 21 0 0 1 21 21"/>
+      </g>`,
+  },
+};
+let uid = 0;
+const icon = (key, mode, size) => {
+  const id = "g" + (uid++);
+  const body = C[key].svg(C[key].pal[mode]).replace(/id="g"/g, `id="${id}"`).replace(/url\(#g\)/g, `url(#${id})`);
+  return `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-label="${C[key].title} icon, ${mode}">${body}</svg>`;
+};
+document.getElementById("grid").innerHTML = Object.keys(C).map((k, i) => `
+  <section class="card">
+    <h2>${i + 1}. ${C[k].title} <span>· ${C[k].sub}</span></h2>
+    <div class="hero">${icon(k, "light", 168)}</div>
+    <div class="variants">
+      ${["light", "dark", "tint"].map(m => `<div class="variant"><div class="wall ${m}">${icon(k, m, 64)}</div>${{ light: "Default", dark: "Dark", tint: "Tinted" }[m]}</div>`).join("")}
+    </div>
+    <div class="row"><div class="sizes">${icon(k, "light", 60)}${icon(k, "light", 40)}${icon(k, "light", 29)}</div><span class="variant">60 · 40 · 29 pt</span></div>
+    <div class="lockup">${icon(k, "light", 44)}<span class="word">bussin</span></div>
+    <p class="why">${C[k].why}</p>
+  </section>`).join("");
+</script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bussin Icon Round 2</title>
+<style>
+  :root { --bg: #f2f2f7; --card: #ffffff; --text: #1c1c1e; --muted: #6e6e73; --line: #e5e5ea; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #000; --card: #1c1c1e; --text: #f2f2f7; --muted: #98989d; --line: #38383a; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif; -webkit-font-smoothing: antialiased; }
+  main { max-width: 1180px; margin: 0 auto; padding: 40px 16px 64px; }
+  h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+  .lede { color: var(--muted); margin: 0 0 28px; max-width: 680px; line-height: 1.5; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; }
+  .card { background: var(--card); border-radius: 24px; padding: 22px; display: flex; flex-direction: column; gap: 16px; }
+  .card h2 { margin: 0; font-size: 19px; letter-spacing: -0.01em; }
+  .card h2 span { color: var(--muted); font-weight: 500; }
+  .top { display: flex; gap: 18px; align-items: center; }
+  .icon { display: block; border-radius: 22.4%; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.14); flex: none; }
+  .side { display: flex; flex-direction: column; gap: 10px; }
+  .modes { display: flex; gap: 8px; }
+  .wall { border-radius: 14px; padding: 8px; display: grid; place-items: center; }
+  .wall.light { background: linear-gradient(160deg, #cfe3ff, #f6e6ff); }
+  .wall.dark { background: linear-gradient(160deg, #1b1f3a, #0b0b10); }
+  .wall.tint { background: linear-gradient(160deg, #3a2a10, #120c04); }
+  .sizes { display: flex; align-items: flex-end; gap: 10px; }
+  .lockup { display: flex; align-items: center; gap: 12px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .word { font-weight: 800; font-size: 32px; letter-spacing: -0.03em; }
+  .why { color: var(--muted); font-size: 14px; line-height: 1.5; margin: 0; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Bussin icon, round 2</h1>
+  <p class="lede">Five very different directions. Pick the one closest to what you want, even if it isn't right yet, and say what's off. Each is shown at full size, in default, dark and tinted modes, at small sizes, and next to the name.</p>
+  <div class="grid" id="grid"></div>
+</main>
+<script>
+const C = {
+  mascot: {
+    title: "Buddy", sub: "a bus with a face",
+    font: `ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", sans-serif`,
+    why: "Playful and friendly, like the slang. A bus front whose headlights and grille make a smile. It has the most personality of the five and works as a sticker or mascot too.",
+    pal: {
+      light: { bg1: "#ff6a3d", bg2: "#ff2d55", body: "#ffffff", ink: "#3a0b17", cheek: "#ffb3c1" },
+      dark:  { bg1: "#3a1418", bg2: "#1f0a0e", body: "#ff8a6b", ink: "#1f0a0e", cheek: "#ffb3c1" },
+      tint:  { bg1: "#141008", bg2: "#1d160b", body: "#e9c27a", ink: "#1a140a", cheek: "#c9a464" },
+    },
+    svg: p => `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.bg1}"/><stop offset="1" stop-color="${p.bg2}"/></linearGradient></defs>
+      <rect width="100" height="100" fill="url(#g)"/>
+      <rect x="27" y="76" width="11" height="10" rx="3" fill="${p.ink}" opacity=".85"/><rect x="62" y="76" width="11" height="10" rx="3" fill="${p.ink}" opacity=".85"/>
+      <rect x="21" y="17" width="58" height="63" rx="16" fill="${p.body}"/>
+      <rect x="28" y="25" width="44" height="21" rx="7" fill="${p.ink}"/>
+      <circle cx="36" cy="59" r="5" fill="${p.ink}"/><circle cx="64" cy="59" r="5" fill="${p.ink}"/>
+      <circle cx="29.5" cy="68" r="3.5" fill="${p.cheek}"/><circle cx="70.5" cy="68" r="3.5" fill="${p.cheek}"/>
+      <path d="M42 66 Q50 74 58 66" fill="none" stroke="${p.ink}" stroke-width="4" stroke-linecap="round"/>`,
+  },
+  ring: {
+    title: "Countdown", sub: "the arrival-time ring",
+    font: `-apple-system, "SF Pro Display", sans-serif`,
+    why: "Built around the one number students care about: how long until the bus comes. A progress ring closing in on a small bus, on black. It looks like an Apple app (think Fitness or Clock) and has nothing in common with Passio.",
+    pal: {
+      light: { bg1: "#16161a", bg2: "#000000", track: "#2a2a30", a: "#b4ff39", b: "#18d36b", bus: "#ffffff" },
+      dark:  { bg1: "#16161a", bg2: "#000000", track: "#232327", a: "#9be03a", b: "#16b45c", bus: "#d9d9de" },
+      tint:  { bg1: "#141008", bg2: "#0c0904", track: "#2a2112", a: "#f3d79e", b: "#e9c27a", bus: "#e9c27a" },
+    },
+    svg: p => `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.bg1}"/><stop offset="1" stop-color="${p.bg2}"/></linearGradient>
+      <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.a}"/><stop offset="1" stop-color="${p.b}"/></linearGradient></defs>
+      <rect width="100" height="100" fill="url(#g)"/>
+      <circle cx="50" cy="50" r="30" fill="none" stroke="${p.track}" stroke-width="11"/>
+      <path d="M50 20 A30 30 0 1 1 20.5 55.2" fill="none" stroke="url(#g2)" stroke-width="11" stroke-linecap="round"/>
+      <g transform="translate(37 36)" fill="${p.bus}"><rect x="0" y="0" width="26" height="24" rx="6"/><rect x="2.5" y="22" width="5" height="6" rx="1.5"/><rect x="18.5" y="22" width="5" height="6" rx="1.5"/></g>
+      <rect x="40.5" y="40" width="19" height="8" rx="2" fill="${p.bg2}"/>
+      <circle cx="42" cy="53.5" r="2.2" fill="${p.bg2}"/><circle cx="58" cy="53.5" r="2.2" fill="${p.bg2}"/>`,
+  },
+  road: {
+    title: "Ess", sub: "the double S of buSSin as a street",
+    font: `"Avenir Next", -apple-system, sans-serif`,
+    why: "The S in bussin drawn as a winding street with lane markings, and a red bus at the top. Warm, a little retro, like a vintage transit poster. It works as a monogram on the product page and in the app.",
+    pal: {
+      light: { bg1: "#fff3d6", bg2: "#ffe2a8", road: "#25252b", lane: "#ffcc00", bus: "#ff3b30", edge: "#fff3d6" },
+      dark:  { bg1: "#25210f", bg2: "#17140a", road: "#f2e6c8", lane: "#25210f", bus: "#ff6a5f", edge: "#17140a" },
+      tint:  { bg1: "#141008", bg2: "#1d160b", road: "#e9c27a", lane: "#1a140a", bus: "#fff0cc", edge: "#1a140a" },
+    },
+    svg: p => `<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${p.bg1}"/><stop offset="1" stop-color="${p.bg2}"/></linearGradient></defs>
+      <rect width="100" height="100" fill="url(#g)"/>
+      <path id="s" d="M72 23 C55 14 30 18 31 33 C32 48 69 45 69 63 C69 80 44 84 27 76" fill="none" stroke="${p.road}" stroke-width="19" stroke-linecap="round"/>
+      <path d="M72 23 C55 14 30 18 31 33 C32 48 69 45 69 63 C69 80 44 84 27 76" fill="none" stroke="${p.lane}" stroke-width="2.6" stroke-dasharray="5 5" stroke-linecap="round"/>
+      <circle cx="72" cy="23" r="8" fill="${p.bus}" stroke="${p.edge}" stroke-width="3"/>`,
+  },
+  grid: {
+    title: "Grid", sub: "a route across Manhattan's streets",
+    font: `"Helvetica Neue", -apple-system, sans-serif`,
+    why: "Manhattan's street grid at its real 29° angle, with one bright route cutting across it and stops along the way. It's specific to New York, and the dark background with a neon line feels like a night city map.",
+    pal: {
+      light: { bg1: "#14121f", bg2: "#0a0912", grid: "#2a2740", a: "#ff2d95", b: "#ff9f0a", stop: "#ffffff" },
+      dark:  { bg1: "#14121f", bg2: "#0a0912", grid: "#221f33", a: "#e0287f", b: "#e08c0a", stop: "#d9d9de" },
+      tint:  { bg1: "#141008", bg2: "#0c0904", grid: "#2a2112", a: "#e9c27a", b: "#f3d79e", stop: "#fff0cc" },
+    },
+    svg: p => {
+      let lines = "";
+      for (let i = -60; i <= 160; i += 13) lines += `<path d="M${i} -20 V120"/><path d="M-20 ${i} H120"/>`;
+      return `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.bg1}"/><stop offset="1" stop-color="${p.bg2}"/></linearGradient>
+        <linearGradient id="g2" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="${p.a}"/><stop offset="1" stop-color="${p.b}"/></linearGradient></defs>
+        <rect width="100" height="100" fill="url(#g)"/>
+        <g transform="rotate(-29 50 50)" stroke="${p.grid}" stroke-width="2.2">${lines}</g>
+        <g transform="rotate(-29 50 50)">
+          <path d="M18 76 H44 V50 H70 V20" fill="none" stroke="url(#g2)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="44" cy="76" r="3.4" fill="${p.stop}"/><circle cx="44" cy="50" r="3.4" fill="${p.stop}"/><circle cx="70" cy="50" r="3.4" fill="${p.stop}"/>
+          <circle cx="70" cy="20" r="7.5" fill="${p.b}" stroke="${p.stop}" stroke-width="3"/>
+        </g>`;
+    },
+  },
+  ticket: {
+    title: "Pass", sub: "a free ride, like a transit card",
+    font: `"Futura", "Avenir Next", -apple-system, sans-serif`,
+    why: "A tilted transit pass with a punched hole and a bus on it, pointing at what makes NYU shuttles great: they're free with your ID. Bright and graphic, like a modern fintech or ticketing app.",
+    pal: {
+      light: { bg1: "#5b8cff", bg2: "#2f52e0", card: "#ffffff", ink: "#2f52e0", stripe: "#ffd60a", hole: "#3f6af0" },
+      dark:  { bg1: "#121a33", bg2: "#0a0f20", card: "#8fb0ff", ink: "#0a0f20", stripe: "#ffd60a", hole: "#0e152a" },
+      tint:  { bg1: "#141008", bg2: "#1d160b", card: "#e9c27a", ink: "#1a140a", stripe: "#fff0cc", hole: "#171209" },
+    },
+    svg: p => `<defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${p.bg1}"/><stop offset="1" stop-color="${p.bg2}"/></linearGradient></defs>
+      <rect width="100" height="100" fill="url(#g)"/>
+      <g transform="rotate(-14 50 50)">
+        <rect x="17" y="27" width="66" height="46" rx="9" fill="${p.card}"/>
+        <rect x="17" y="35" width="66" height="7" fill="${p.stripe}"/>
+        <circle cx="72" cy="61" r="4.5" fill="${p.hole}"/>
+        <g transform="translate(26 48)" fill="${p.ink}"><rect width="22" height="18" rx="4.5"/><rect x="2.5" y="17" width="4.5" height="4.5" rx="1.2"/><rect x="15" y="17" width="4.5" height="4.5" rx="1.2"/></g>
+        <rect x="28.5" y="51" width="17" height="6.5" rx="1.5" fill="${p.card}"/>
+      </g>`,
+  },
+};
+let uid = 0;
+const icon = (key, mode, size) => {
+  const id = "u" + (uid++);
+  const body = C[key].svg(C[key].pal[mode]).replace(/id="(g2?)"/g, `id="$1${id}"`).replace(/url\(#(g2?)\)/g, `url(#$1${id})`);
+  return `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 100 100" role="img" aria-label="${C[key].title} icon, ${mode}">${body}</svg>`;
+};
+document.getElementById("grid").innerHTML = Object.keys(C).map((k, i) => `
+  <section class="card">
+    <h2>${String.fromCharCode(65 + i)}. ${C[k].title} <span>· ${C[k].sub}</span></h2>
+    <div class="top">${icon(k, "light", 150)}
+      <div class="side">
+        <div class="modes">${["dark", "tint"].map(m => `<div class="wall ${m}">${icon(k, m, 56)}</div>`).join("")}</div>
+        <div class="sizes">${icon(k, "light", 60)}${icon(k, "light", 40)}${icon(k, "light", 29)}</div>
+      </div>
+    </div>
+    <div class="lockup">${icon(k, "light", 44)}<span class="word" style="font-family:${C[k].font}">bussin</span></div>
+    <p class="why">${C[k].why}</p>
+  </section>`).join("");
+</script>
+</body>
+</html>
