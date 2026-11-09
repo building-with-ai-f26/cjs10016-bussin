@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>[Your Product Name] · Building with AI (Fall 2026)</title>
+  <title>Bussin · Building with AI (Fall 2026)</title>
 
   <!-- Week 1: create your PostHog account only.
        Build 2: paste your project's current PostHog web snippet here,
@@ -144,8 +144,8 @@
     <!-- HERO / PRODUCT PITCH -->
     <header>
       <span class="eyebrow">NYU Stern · Building with AI · Fall 2026</span>
-      <h1>[Your Product Name]</h1>
-      <p class="tagline">[One clear sentence: Who is this for, and what painful job does it do for them?]</p>
+      <h1>Bussin</h1>
+      <p class="tagline">For NYU students who ride the free shuttles: see where your bus is, when it reaches your stop, and which route gets you where you're going.</p>
       <div class="cta-row">
         <a class="btn" href="#live-demo" onclick="window.posthog && posthog.capture('clicked_try_product')">See the Product →</a>
         <a class="btn btn-secondary" href="#prd">Read the Living PRD</a>
@@ -171,21 +171,21 @@
       <p class="meta">Updated every week as we test with real users and learn what works.</p>
 
       <h3>1. Target User & The Job to Be Done</h3>
-      <p><strong>Who is this for?</strong> [Name a specific, reachable person or role you have direct access to.]</p>
-      <p><strong>The painful "Before" workflow:</strong> [How do they do this today, and why is it slow, manual, or broken?]</p>
-      <p><strong>The "After" workflow with this product:</strong> [What does your tool do for them in one sitting?]</p>
+      <p><strong>Who is this for?</strong> NYU undergrad and grad students who use the free NYU shuttles, especially commuters getting to and from campus. My first testers will be my classmates.</p>
+      <p><strong>The painful "Before" workflow:</strong> Right now students use Passio GO, the app NYU points them to, and it's close to unusable. It won't show how far the next bus is from your stop or give you an arrival time. You also can't enter where you are and where you're headed to get a suggested route. So you guess which shuttle to take, walk to the stop, and wait without knowing how long the wait will be.</p>
+      <p><strong>The "After" workflow with this product:</strong> Open Bussin and it finds your nearest stop, shows the next shuttle on the map, and tells you when it will arrive. Type in where you're going and it tells you which shuttle to take and where to get on. The shuttles are free, and the goal is to make them easy enough that students actually use them.</p>
 
       <h3>2. Scope & Explicit Non-Goals</h3>
       <ul>
-        <li><strong>In Scope (Core Workflow):</strong> [The 1 main workflow this product does reliably]</li>
-        <li><strong>Out of Scope #1:</strong> [Feature you are deliberately NOT building in 6 weeks]</li>
-        <li><strong>Out of Scope #2:</strong> [Feature you are deliberately NOT building in 6 weeks]</li>
-        <li><strong>Out of Scope #3:</strong> [Feature you are deliberately NOT building in 6 weeks]</li>
+        <li><strong>In Scope (Core Workflow):</strong> Live shuttle locations, arrival times at your nearest stop, and a suggested shuttle route from where you are to where you're going.</li>
+        <li><strong>Out of Scope #1:</strong> Other schools. Passio GO serves many universities, but Bussin covers NYU routes only.</li>
+        <li><strong>Out of Scope #2:</strong> Mobile student ID or wallet. If you lose your ID card, Bussin can't stand in for it.</li>
+        <li><strong>Out of Scope #3:</strong> General navigation. Walking directions, the subway, and anything off the shuttle network stay with Google Maps or Apple Maps.</li>
       </ul>
 
       <h3>3. How It Works Under the Hood & Riskiest Assumption (Week 2+)</h3>
-      <p><strong>Riskiest Assumption:</strong> [What is the #1 technical or user risk that could sink this product?]</p>
-      <p><strong>Simple Architecture:</strong> [User Input] → [Your App / Server] → [AI Model / Tool] → [Output]</p>
+      <p><strong>Riskiest Assumption:</strong> Getting live bus locations. Passio GO pulls them from a feed, but I haven't confirmed that the feed is open to the public or that a third-party app is allowed to use it. Without that data there's nothing to track, so this is the first thing I'm checking.</p>
+      <p><strong>Simple Architecture:</strong> Your location or chosen stop, plus a destination → Bussin web app → live shuttle feed (if I can get access) and NYU route and stop data → map with the next bus, its ETA, and a suggested route</p>
 
       <h3>4. Unit Economics & Analytics Snapshot (Updated Weekly)</h3>
       <div class="grid-2">
