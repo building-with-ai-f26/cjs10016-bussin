@@ -35,3 +35,4 @@ ios/Bussin/Info.plist
 ios/Secrets.xcconfig
 ios/build/
 ios/DerivedData/
+!ios/Secrets.example.xcconfig

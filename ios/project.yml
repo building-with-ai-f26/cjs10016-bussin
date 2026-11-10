@@ -7,11 +7,17 @@ options:
 configFiles:
   Debug: Config.xcconfig
   Release: Config.xcconfig
+packages:
+  PostHog:
+    url: https://github.com/PostHog/posthog-ios
+    from: "3.0.0"
 targets:
   Bussin:
     type: application
     platform: iOS
     sources: [Bussin]
+    dependencies:
+      - package: PostHog
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.schwaigs.bussin
