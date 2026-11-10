@@ -18,6 +18,7 @@ NYU students ride the shuttles for free, but Passio GO, the app NYU points them 
 - **Biggest finding so far:** Passio GO's live feed for NYU answers without a login, so bus positions are reachable. What I don't know yet is whether Passio allows a third-party app to use that feed. That's the riskiest open question.
 - **Next, for Build 2 (due Nov 16):** the first SwiftUI version reading the real feed, plus PostHog analytics.
 - **Logo:** four rounds of concepts are in [`logo/`](./logo/). Three finalists are left, all based on NYC signage, and I haven't picked one yet.
+- **The native app is underway.** [`ios/`](./ios/) holds the SwiftUI app: live buses, routes and stops on Apple Maps, polling Passio every 4 seconds, with the parsers tested against recorded feed data. A separate repo, [`bussin-data`](https://github.com/schwaigs-cj/bussin-data), logs riders-per-bus around the clock for the route-suggestions pitch to NYU.
 
 ## Repository map
 
@@ -47,7 +48,13 @@ Then open http://localhost:8000/prototype/. Opening `docs/prototype/index.html` 
 
 To change the prototype's map or route data, follow [`tools/prototype/README.md`](./tools/prototype/README.md). It covers re-downloading the street data and refreshing the Passio snapshot.
 
-Instructions for the iOS app will go here and in `AGENTS.md` once the Xcode project exists. You'll need a Mac with Xcode.
+For the iOS app you'll need a Mac with Xcode 27 and XcodeGen (`brew install xcodegen`):
+
+```bash
+cd ios && xcodegen generate && open Bussin.xcodeproj
+```
+
+Then hit Run. The app builds against the live Passio feed; no keys needed. Analytics stays off unless you copy `ios/Secrets.example.xcconfig` to `ios/Secrets.xcconfig` with a PostHog key.
 
 ## Keys and secrets
 
