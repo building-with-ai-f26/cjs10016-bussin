@@ -75,3 +75,26 @@ struct PassioStopRef: Decodable {
         stopId = try c.decode(String.self)   // the stop id
     }
 }
+
+struct PassioBusesPayload: Decodable {
+    var buses: [String: [PassioBus]] = [:]
+
+    private enum CodingKeys: String, CodingKey { case buses }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        buses = (try? c.decode([String: [PassioBus]].self, forKey: .buses)) ?? [:]
+    }
+}
+
+struct PassioBus: Decodable {
+    let deviceId: Int
+    let bus: String?
+    let latitude: String
+    let longitude: String
+    let calculatedCourse: String?
+    let paxLoad: Int?
+    let totalCap: Int?
+    let outOfService: Int?
+    let outdated: Int?
+    let routeId: String?
+}
