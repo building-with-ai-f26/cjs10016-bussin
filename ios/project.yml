@@ -1,0 +1,48 @@
+name: Bussin
+options:
+  bundleIdPrefix: com.schwaigs
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+configFiles:
+  Debug: Config.xcconfig
+  Release: Config.xcconfig
+targets:
+  Bussin:
+    type: application
+    platform: iOS
+    sources: [Bussin]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.schwaigs.bussin
+        MARKETING_VERSION: 0.1.0
+        CURRENT_PROJECT_VERSION: 1
+        TARGETED_DEVICE_FAMILY: 1
+        SWIFT_VERSION: "5.0"
+    info:
+      path: Bussin/Info.plist
+      properties:
+        UILaunchScreen: {}
+        NSLocationWhenInUseUsageDescription: Bussin uses your location to show how far you are from each shuttle stop.
+        PostHogApiKey: $(POSTHOG_API_KEY)
+  BussinTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [BussinTests]
+    dependencies:
+      - target: Bussin
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        SWIFT_VERSION: "5.0"
+schemes:
+  Bussin:
+    build:
+      targets:
+        Bussin: all
+        BussinTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [BussinTests]
