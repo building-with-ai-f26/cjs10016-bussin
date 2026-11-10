@@ -42,7 +42,7 @@ Passio's bus feed includes `paxLoad` (riders aboard right now) and `totalCap` pe
 2. **App demand signals** — PostHog events: `route_viewed`, `trip_planned` (board/alight stops, route), and `no_good_option` when a search produces no shuttle better than walking. That last one measures unmet demand.
 3. **Analysis** — a short Python script turning the JSONL into riders-by-route-by-hour-by-weekday charts for the NYU pitch.
 
-Validation first: watch a week of collector output and sanity-check `paxLoad` against actual rides before building any argument on it.
+Validation first: watch a week of collector output and sanity-check `paxLoad` against actual rides before building any argument on it. First find (Nov 10): a Route B bus reported its position as rural New Hampshire mid-service, so off-corridor filtering is required — a ping more than ~300 m from its route's own polyline (which the feed supplies) gets flagged. The ETA engine computes that projection distance anyway; the collector keeps raw rows and filters at analysis time, so glitch frequency itself becomes reportable.
 
 ## Feed extras banked for later
 
