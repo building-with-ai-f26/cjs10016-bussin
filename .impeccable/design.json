@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-10T12:00:00-05:00",
+  "title": "Design System: Bussin",
+  "extensions": {
+    "colorMeta": {
+      "system-blue": { "role": "primary", "displayName": "System Blue", "canonical": "#007aff", "darkValue": "#0a84ff", "tonalRamp": ["#00284d", "#00417d", "#005bb0", "#007aff", "#3395ff", "#66afff", "#99caff", "#cce4ff"] },
+      "live-green": { "role": "secondary", "displayName": "Live Green", "canonical": "#248a3d", "darkValue": "#30d158", "tonalRamp": ["#0b2e14", "#145123", "#1c6e30", "#248a3d", "#30d158", "#5fdd7e", "#8fe8a4", "#c7f4d1"] },
+      "alert-red": { "role": "secondary", "displayName": "Alert Red", "canonical": "#ff3b30", "darkValue": "#ff453a", "tonalRamp": ["#4d0e0b", "#801713", "#b3211b", "#ff3b30", "#ff6259", "#ff8982", "#ffb1ac", "#ffd8d5"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#000000", "darkValue": "#ffffff" },
+      "ink-secondary": { "role": "neutral", "displayName": "Ink Secondary", "canonical": "rgba(60, 60, 67, 0.72)", "darkValue": "rgba(235, 235, 245, 0.68)" },
+      "ink-tertiary": { "role": "neutral", "displayName": "Ink Tertiary", "canonical": "rgba(60, 60, 67, 0.45)", "darkValue": "rgba(235, 235, 245, 0.4)" },
+      "separator": { "role": "neutral", "displayName": "Separator", "canonical": "rgba(60, 60, 67, 0.18)", "darkValue": "rgba(84, 84, 88, 0.6)" },
+      "fill-quiet": { "role": "neutral", "displayName": "Fill Quiet", "canonical": "rgba(118, 118, 128, 0.12)", "darkValue": "rgba(118, 118, 128, 0.24)" },
+      "card": { "role": "neutral", "displayName": "Card Material", "canonical": "rgba(255, 255, 255, 0.85)", "darkValue": "rgba(58, 58, 60, 0.62)" },
+      "glass": { "role": "neutral", "displayName": "Glass Material", "canonical": "rgba(246, 246, 248, 0.8)", "darkValue": "rgba(36, 36, 38, 0.78)" },
+      "glass-border": { "role": "neutral", "displayName": "Glass Border", "canonical": "rgba(255, 255, 255, 0.7)", "darkValue": "rgba(255, 255, 255, 0.1)" },
+      "map-land": { "role": "neutral", "displayName": "Map Land", "canonical": "#f4f2ed", "darkValue": "#2a2a2c" },
+      "map-water": { "role": "neutral", "displayName": "Map Water", "canonical": "#a8d3f2", "darkValue": "#1b3550" },
+      "map-park": { "role": "neutral", "displayName": "Map Park", "canonical": "#cde7bf", "darkValue": "#233a27" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Sheet-header titles: the stop, route, or destination name." },
+      "headline": { "displayName": "Headline", "purpose": "Section headers inside sheets." },
+      "title": { "displayName": "Title", "purpose": "Row primary text and emphasized values; 400-weight sibling for calm, dense lists." },
+      "body": { "displayName": "Body", "purpose": "Descriptive text at 15-17px." },
+      "label": { "displayName": "Label", "purpose": "Metadata and ETA second lines; 11-12px floor only inside badges and markers." }
+    },
+    "shadows": [
+      { "name": "ambient-sheet", "value": "0 10px 40px rgba(0,0,0,0.14), 0 1px 3px rgba(0,0,0,0.08)", "purpose": "The one shadow for floating UI (sheet, chips, controls). Dark mode: 0 10px 40px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3)." },
+      { "name": "marker-drop", "value": "0 2px 5px rgba(0,0,0,0.35)", "purpose": "Small crisp drop under map markers so they sit on the map." }
+    ],
+    "motion": [
+      { "name": "sheet-spring", "value": "transform 0.42s cubic-bezier(0.2, 0.9, 0.25, 1)", "purpose": "Sheet detent changes; the system's structural motion." },
+      { "name": "focus-fade", "value": "opacity 0.25s ease", "purpose": "Dimming unfocused routes, stops, and buses." },
+      { "name": "live-wave", "value": "1.8s ease-in-out infinite, second arc +0.3s stagger", "purpose": "The live icon's pulse; motion-as-meaning, used nowhere else." }
+    ],
+    "breakpoints": [
+      { "name": "full-screen", "value": "600px", "purpose": "Prototype-only: below this width the device frame disappears and the app fills the viewport." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Route Badge",
+      "kind": "chip",
+      "refersTo": "route-badge",
+      "description": "Rounded square in the route's feed color with its letter; text black/white by luminance.",
+      "html": "<span class=\"ds-route-badge\" style=\"background:#f7b6d2;color:#1c1c1e\">A</span>",
+      "css": ".ds-route-badge { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; font-family: -apple-system, 'SF Pro Text', sans-serif; font-size: 16px; font-weight: 700; }"
+    },
+    {
+      "name": "Departure Row",
+      "kind": "card",
+      "refersTo": "row",
+      "description": "A tappable row: route badge, name and direction, right-aligned live ETA column.",
+      "html": "<button class=\"ds-dep-row\"><span class=\"ds-route-badge\" style=\"background:#CD5C5C;color:#ffffff\">E</span><span class=\"ds-dep-main\"><span class=\"ds-dep-title\">Route E</span><span class=\"ds-dep-sub\">To NYU Langone Health</span></span><span class=\"ds-dep-eta\"><span class=\"ds-dep-now\">3 min</span><span class=\"ds-dep-then\">then 14 min</span></span></button>",
+      "css": ".ds-dep-row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 8px 14px; background: rgba(255,255,255,0.85); border: none; border-radius: 22px; cursor: pointer; font-family: -apple-system, 'SF Pro Text', sans-serif; text-align: left; transition: background 0.15s; } .ds-dep-row:hover { background: rgba(118,118,128,0.12); } .ds-dep-row:focus-visible { outline: 2px solid #007aff; outline-offset: 2px; } .ds-dep-main { flex: 1; display: flex; flex-direction: column; } .ds-dep-title { font-size: 17px; font-weight: 600; color: #000; } .ds-dep-sub { font-size: 15px; color: rgba(60,60,67,0.72); } .ds-dep-eta { text-align: right; display: flex; flex-direction: column; } .ds-dep-now { font-size: 17px; font-weight: 600; color: #248a3d; } .ds-dep-then { font-size: 13px; color: rgba(60,60,67,0.72); }"
+    },
+    {
+      "name": "Search Pill",
+      "kind": "input",
+      "refersTo": "search-pill",
+      "description": "The \"Where to?\" entry point; quiet fill, pill shape, 44px tall.",
+      "html": "<button class=\"ds-search-pill\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\"><circle cx=\"10.5\" cy=\"10.5\" r=\"6.5\"/><path d=\"m15.5 15.5 5 5\"/></svg><span>Where to?</span></button>",
+      "css": ".ds-search-pill { display: flex; align-items: center; gap: 8px; height: 44px; width: 100%; padding: 0 14px; border: none; border-radius: 22px; background: rgba(118,118,128,0.12); color: rgba(60,60,67,0.72); font-family: -apple-system, 'SF Pro Text', sans-serif; font-size: 17px; cursor: pointer; transition: background 0.15s; } .ds-search-pill:hover { background: rgba(118,118,128,0.2); } .ds-search-pill:focus-visible { outline: 2px solid #007aff; outline-offset: 2px; }"
+    },
+    {
+      "name": "Trip Option (selected)",
+      "kind": "card",
+      "refersTo": "trip-option",
+      "description": "A trip plan option; the selected card wears a 2px System Blue border.",
+      "html": "<div class=\"ds-trip-opt ds-selected\"><div class=\"ds-trip-top\"><span class=\"ds-trip-legs\">7 → <span class=\"ds-route-badge\" style=\"background:#f7b6d2;color:#1c1c1e;width:24px;height:24px;border-radius:6px;font-size:13px\">A</span> → 4</span><span class=\"ds-trip-total\">28 <small>min</small></span></div><div class=\"ds-trip-bot\"><span class=\"ds-trip-leave\">Leave in 5 min</span><span>Arrive 10:23</span></div></div>",
+      "css": ".ds-trip-opt { padding: 14px; border-radius: 22px; background: rgba(255,255,255,0.85); border: 2px solid transparent; font-family: -apple-system, 'SF Pro Text', sans-serif; } .ds-trip-opt.ds-selected { border-color: #007aff; } .ds-trip-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; } .ds-trip-legs { display: inline-flex; align-items: center; gap: 6px; color: rgba(60,60,67,0.72); font-size: 12px; font-weight: 600; } .ds-trip-total { font-size: 22px; font-weight: 700; color: #000; } .ds-trip-total small { font-size: 15px; font-weight: 600; } .ds-trip-bot { display: flex; justify-content: space-between; margin-top: 6px; font-size: 15px; color: rgba(60,60,67,0.72); } .ds-trip-leave { color: #248a3d; font-weight: 600; }"
+    },
+    {
+      "name": "Bus Marker",
+      "kind": "custom",
+      "refersTo": "route-badge",
+      "description": "Live bus on the map: route-colored circle, white ring, heading arrow orbiting outside.",
+      "html": "<span class=\"ds-bus-marker\"><span class=\"ds-bus-arrow\" style=\"transform:rotate(45deg)\"><b style=\"background:#9370DB\"></b></span><span class=\"ds-bus-c\" style=\"background:#9370DB;color:#ffffff\">B</span></span>",
+      "css": ".ds-bus-marker { position: relative; display: inline-block; width: 26px; height: 26px; margin: 24px; } .ds-bus-c { position: absolute; inset: 0; border-radius: 50%; border: 2.5px solid #fff; display: grid; place-items: center; font-family: -apple-system, 'SF Pro Text', sans-serif; font-size: 12px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.35); } .ds-bus-arrow { position: absolute; left: 50%; top: 50%; width: 0; height: 0; } .ds-bus-arrow b { position: absolute; left: -6px; top: -21px; width: 12px; height: 9px; clip-path: polygon(50% 0, 100% 100%, 0 100%); }"
+    },
+    {
+      "name": "Live Icon",
+      "kind": "custom",
+      "refersTo": "route-badge",
+      "description": "The signature live-data mark: a dot with two staggered pulsing arcs, always Live Green.",
+      "html": "<svg class=\"ds-live-ic\" width=\"15\" height=\"15\" viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"#248a3d\" stroke-width=\"2.2\" stroke-linecap=\"round\"><circle cx=\"3.5\" cy=\"12.5\" r=\"2\" fill=\"#248a3d\" stroke=\"none\"/><path class=\"ds-a1\" d=\"M3.5 7a5.5 5.5 0 0 1 5.5 5.5\"/><path class=\"ds-a2\" d=\"M3.5 2a10.5 10.5 0 0 1 10.5 10.5\"/></svg>",
+      "css": ".ds-live-ic { overflow: visible; } .ds-live-ic .ds-a1 { animation: ds-wave 1.8s ease-in-out infinite; } .ds-live-ic .ds-a2 { animation: ds-wave 1.8s ease-in-out 0.3s infinite; } @keyframes ds-wave { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }"
+    },
+    {
+      "name": "Timeline Row",
+      "kind": "custom",
+      "refersTo": "row",
+      "description": "Route/bus detail: colored rail, white stop dot, name, right-aligned ETA.",
+      "html": "<button class=\"ds-tl-row\"><span class=\"ds-tl-rail\" style=\"background:#CD5C5C\"></span><span class=\"ds-tl-dot\" style=\"border-color:#CD5C5C\"></span><span class=\"ds-tl-name\">715 Broadway</span><span class=\"ds-tl-eta\">10 min</span></button>",
+      "css": ".ds-tl-row { position: relative; display: flex; align-items: center; gap: 14px; width: 100%; min-height: 50px; padding: 0 14px; border: none; background: rgba(255,255,255,0.85); cursor: pointer; font-family: -apple-system, 'SF Pro Text', sans-serif; text-align: left; } .ds-tl-row:hover { background: rgba(118,118,128,0.12); } .ds-tl-rail { position: absolute; left: 33px; top: 0; bottom: 0; width: 6px; margin-left: -3px; } .ds-tl-dot { width: 16px; height: 16px; border-radius: 50%; background: #fff; border: 4px solid; margin-left: 11px; flex: none; z-index: 1; } .ds-tl-name { flex: 1; font-size: 17px; color: #000; } .ds-tl-eta { font-size: 17px; font-weight: 600; color: #248a3d; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Glance and Go",
+    "overview": "Every screen is designed to be read in two seconds by someone walking to a stop. The product's one job — where's my bus, when, which one — sets the hierarchy on every surface: the answer is the biggest, most colorful thing in view, and everything else recedes. Components are calm and factual; the data (route letters, arrival times, the live green pulse) is the only decoration the system allows itself. The visual language is borrowed deliberately from Apple Maps and the iOS system palette; Bussin's own identity lives in content — NYU's seven route colors, New York place names, and the NYC-signage brand direction — never in reinvented chrome.",
+    "keyCharacteristics": [
+      "Answer-first hierarchy: times and route letters outrank titles and controls.",
+      "Apple's materials and manners; NYU's content and color.",
+      "Dual-appearance from birth: every token has a light and dark value.",
+      "Data colors are functional, never ornamental."
+    ],
+    "rules": [
+      { "name": "The Three Voices Rule", "body": "Blue is interaction, green is live, red is alert. No fourth accent may be introduced, and none of the three may borrow another's meaning.", "section": "colors" },
+      { "name": "The Feed Owns Route Colors Rule", "body": "Route colors are runtime data from Passio, matching NYU's printed signage. Never restyle, \"improve,\" or hardcode them into the theme; always compute text contrast per color.", "section": "colors" },
+      { "name": "The Answer Is Biggest Rule", "body": "On any screen, the largest text after the title must be the number or word the rider came for. If a label outranks an answer, the hierarchy is wrong.", "section": "typography" },
+      { "name": "The One Shadow Rule", "body": "Floating UI gets the ambient token; markers get the marker drop; nothing else casts anything. If a surface needs more separation, it wants material or hierarchy, not a bigger shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do put the rider's answer (minutes, route letter) in the largest, most colorful position on every new screen — the Two-Second test.",
+      "Do design light and dark together; every new color needs both values the day it's born.",
+      "Do translate to native equivalents in SwiftUI: SF text styles, system materials, semantic label colors, SF Symbols.",
+      "Do label data honesty states: simulated, stale, and estimated values say so in Ink Secondary.",
+      "Do keep 44pt touch targets even on dense timeline rows."
+    ],
+    "donts": [
+      "Don't reproduce Passio GO's patterns: no dense menus, banner clutter, unlabeled tiny buses, or vendor-generic styling. It is the anti-reference.",
+      "Don't let the app read as a wrapped website — no hover-dependent affordances, hamburger menus, custom back controls, or web-shaped buttons.",
+      "Don't gamify: no streaks, badges, confetti, or mascots, even in growth features.",
+      "Don't introduce a fourth accent color or use route colors decoratively outside their route.",
+      "Don't hardcode feed-supplied route colors into themes or assets."
+    ]
+  }
+}
