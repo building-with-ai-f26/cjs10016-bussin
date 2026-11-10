@@ -14,7 +14,7 @@ NYU students ride the shuttles for free, but Passio GO, the app NYU points them 
 
 ## Where it stands (Nov 9, 2026)
 
-- **Build 1 is done.** It includes PRD v1, a home screen mockup, and an interactive prototype that runs in the browser. You can search for a place like NYU Tandon, compare shuttle options against walking, and tap any stop or route. The routes and stops are real NYU data. The buses and arrival times are simulated.
+- **Build 1 is done.** It includes PRD v1, a home screen mockup, and an interactive prototype that runs in the browser. You can search for a place like NYU Tandon, compare shuttle options against walking, and tap any stop, route or bus. Tapping a bus lists the stops it has left and when it will reach each one, which is what you want once you're on board. The routes and stops are real NYU data. The buses and arrival times are simulated.
 - **Biggest finding so far:** Passio GO's live feed for NYU answers without a login, so bus positions are reachable. What I don't know yet is whether Passio allows a third-party app to use that feed. That's the riskiest open question.
 - **Next, for Build 2 (due Nov 16):** the first SwiftUI version reading the real feed, plus PostHog analytics.
 - **Logo:** four rounds of concepts are in [`logo/`](./logo/). Three finalists are left, all based on NYC signage, and I haven't picked one yet.

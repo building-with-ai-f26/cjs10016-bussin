@@ -34,4 +34,4 @@ The feed answers without a login. We still need to confirm that Passio allows a 
 
 ## Test links
 
-The prototype accepts a few URL parameters for testing: `?view=plan&key=tandon`, `?view=route&id=74769`, `?view=stop&id=6574`, `?view=search&q=lang`, `?theme=dark`, and `?instant` (skip camera animations, useful for screenshots).
+The prototype accepts a few URL parameters for testing: `?view=plan&key=tandon`, `?view=route&id=74769`, `?view=stop&id=6574`, `?view=bus&num=2146`, `?view=search&q=lang`, `?theme=dark`, and `?instant` (skip camera animations, useful for screenshots).

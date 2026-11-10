@@ -135,6 +135,9 @@
   .mk-bus .arrow { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
   .mk-bus .arrow b { position: absolute; left: -6px; top: -21px; width: 12px; height: 9px; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
   .mk-bus.dim { opacity: .2; }
+  .mk-bus.sel { z-index: 5; }
+  .mk-bus.sel .c { width: 34px; height: 34px; inset: -4px; font-size: 15px; border-width: 3px; box-shadow: 0 0 0 6px rgba(0,122,255,.28), 0 3px 8px rgba(0,0,0,.35); }
+  .mk-bus.sel .arrow b { top: -25px; }
   .mk-me { width: 0; height: 0; pointer-events: none; }
   .mk-me .halo { position: absolute; left: -22px; top: -22px; width: 44px; height: 44px; border-radius: 50%; background: var(--blue); animation: pulse 2.4s ease-out infinite; }
   .mk-me .dot { position: absolute; left: -10px; top: -10px; width: 20px; height: 20px; border-radius: 50%; background: var(--blue); border: 3px solid #fff; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
@@ -242,6 +245,13 @@
   .tl-bus { min-height: 34px; }
   .tl-bus .bchip { width: 24px; height: 24px; border-radius: 50%; margin-left: 7px; border: 2px solid #fff; display: grid; place-items: center;
     font-size: 11px; font-weight: 700; z-index: 1; box-shadow: 0 1px 3px rgba(0,0,0,.3); flex: none; }
+  .tl-bus .chev { margin-left: auto; }
+  .tl-row.passed .t17r { color: var(--secondary); }
+  .tl-row .clock { font-size: 17px; font-weight: 600; color: var(--label); font-variant-numeric: tabular-nums; }
+  .tl-row .in { font-size: 13px; color: var(--live); font-weight: 600; display: flex; align-items: center; gap: 3px; justify-content: flex-end; }
+  .tl-row .tag { font-size: 12px; font-weight: 600; color: var(--blue); text-transform: uppercase; letter-spacing: .03em; }
+  .tl-head .bchip { width: 30px; height: 30px; margin-left: 4px; font-size: 13px; border-width: 2.5px; }
+  .follow { margin: 12px 4px 0; }
 
   .above { position: absolute; bottom: 100%; left: 4px; right: 4px; margin-bottom: 10px; display: flex; justify-content: space-between;
     align-items: flex-end; transition: opacity .2s; pointer-events: none; }
@@ -262,7 +272,8 @@
     <ol>
       <li>Tap <strong>Where to?</strong> and pick NYU Tandon.</li>
       <li>Compare the trip options and tap one to see its steps.</li>
-      <li>Close it, then tap a stop or a bus on the map.</li>
+      <li>Close it, then tap a stop on the map.</li>
+      <li>Tap a bus to see the stops it has left and when it reaches each one.</li>
       <li>Tap a route to see every stop and where its buses are.</li>
     </ol>
     <p><strong>Real:</strong> NYU's routes, colors and stops from Passio GO's public feed. <strong>Simulated:</strong> the buses, so arrival times are made up but consistent with what you see on the map. The clock runs 4× fast so the buses visibly move.</p>
@@ -525,7 +536,7 @@ for (const s of DATA.stops) {
 const hubMk = addMk("mk-hub", `<span class="sq">${I.bus(16)}</span><span class="lbl">${esc(NEAREST.name)}</span>`, NEAREST.x, NEAREST.y, () => push({ v: "stop", id: NEAREST.id }));
 const busMk = BUSES.map(b => {
   const c = b.r.color;
-  const el = addMk("mk-bus", `<span class="arrow"><b style="background:${c}"></b></span><span class="c" style="background:${c};color:${textOn(c)}">${ROUTE_INFO[b.id].letter}</span>`, 0, 0, () => push({ v: "route", id: b.id }));
+  const el = addMk("mk-bus", `<span class="arrow"><b style="background:${c}"></b></span><span class="c" style="background:${c};color:${textOn(c)}">${ROUTE_INFO[b.id].letter}</span>`, 0, 0, () => push({ v: "bus", num: String(b.num) }));
   el.setAttribute("aria-label", `${b.r.name} bus ${b.num}`); el.bus = b; return el;
 });
 const meMk = addMk("mk-me", `<span class="halo"></span><span class="cone"></span><span class="dot"></span>`, ME.x, ME.y);
@@ -589,7 +600,7 @@ mapEl.addEventListener("pointermove", e => {
   if (pts.length === 1 && st.length >= 1) {
     const dx = pts[0].x - st[0].x, dy = pts[0].y - st[0].y;
     if (!gesture.moved && Math.hypot(dx, dy) < 5) return;
-    if (!gesture.moved) { gesture.moved = true; mapEl.setPointerCapture(e.pointerId); mapEl.classList.add("grabbing"); }
+    if (!gesture.moved) { gesture.moved = true; mapEl.setPointerCapture(e.pointerId); mapEl.classList.add("grabbing"); if (follow) { follow = null; render(); } }
     cam = { ...gesture.cam, tx: gesture.cam.tx + dx, ty: gesture.cam.ty + dy };
   } else if (pts.length >= 2 && st.length >= 2) {
     gesture.moved = true;
@@ -660,7 +671,9 @@ function pop() { stack.pop(); if (!stack.length) stack.push({ v: "home" }); ente
 function home() { stack.length = 0; stack.push({ v: "home" }); enter(); }
 const cur = () => stack[stack.length - 1];
 
-function highlight({ routes = null, stops = null, keyStops = [], busRoutes = null } = {}) {
+const busByNum = num => BUSES.find(b => String(b.num) === String(num));
+let follow = null;   // bus the camera is tracking, if any
+function highlight({ routes = null, stops = null, keyStops = [], busRoutes = null, bus = null } = {}) {
   svgEl.classList.toggle("dim-routes", !!routes);
   svgEl.querySelectorAll(".route").forEach(g => g.classList.toggle("on", !!routes && routes.includes(g.dataset.id)));
   if (routes) for (const id of routes) document.getElementById("routes").appendChild(svgEl.querySelector(`.route[data-id="${id}"]`));
@@ -669,7 +682,10 @@ function highlight({ routes = null, stops = null, keyStops = [], busRoutes = nul
     el.classList.toggle("key", keyStops.includes(id));
     el.querySelector("i").style.borderColor = "";
   }
-  for (const el of busMk) el.classList.toggle("dim", !!busRoutes && !busRoutes.includes(el.bus.id));
+  for (const el of busMk) {
+    el.classList.toggle("dim", bus ? el.bus !== bus : !!busRoutes && !busRoutes.includes(el.bus.id));
+    el.classList.toggle("sel", el.bus === bus);
+  }
 }
 function setPin(dest) {
   if (pinMk) { pinMk.remove(); pinMk = null; }
@@ -682,6 +698,7 @@ function enter() {
   document.getElementById("overlay").innerHTML = "";
   setPin(null);
   highlight();
+  follow = null;
   contentEl.scrollTop = 0;
   if (v.v === "home") {
     headEl.innerHTML = `<div class="search-row"><button class="search" data-act="search" aria-label="Search for a destination">${I.mag}<span>Where to?</span>${I.mic}</button><button class="avatar" aria-label="Account">${I.person}</button></div>`;
@@ -716,6 +733,16 @@ function enter() {
     const ids = r.stops.map(s => s.id);
     highlight({ routes: [v.id], stops: ids, busRoutes: [v.id] });
     camFit(r.minX, r.minY, r.maxX, r.maxY, "medium");
+  } else if (v.v === "bus") {
+    const b = busByNum(v.num);
+    if (!b) { pop(); return; }
+    const r = b.r;
+    headEl.innerHTML = `<div class="view-head">${badge(b.id).replace('class="badge "', 'class="head-badge"')}<div class="grow"><div class="view-title">Bus ${b.num}</div><div class="view-sub">${esc(r.name)} · ${esc(ROUTE_INFO[b.id].to)}</div></div>${closeBtn}</div>`;
+    setDetent("medium");
+    highlight({ routes: [b.id], stops: r.stops.map(s => s.id), bus: b });
+    const p = at(r, busD(b));
+    camCenter(p.x, p.y, 1.2, "medium");
+    follow = b;
   }
   render();
 }
@@ -796,6 +823,8 @@ function render() {
     h += `<div class="sec-head"><h2>Distance</h2></div><div class="card"><div class="row"><span class="poi" style="background:var(--fill);color:var(--label)">${I.walk(20)}</span><span class="grow"><div class="t17r">${mins(walkSec(ME, STOP[v.id]))} min walk</div><div class="s15">${fmtDist(meters(ME, STOP[v.id]))} from your location</div></span></div></div>`;
   } else if (v.v === "route") {
     h += timeline(v.id);
+  } else if (v.v === "bus") {
+    h += busTimeline(busByNum(v.num));
   }
   contentEl.innerHTML = h;
   contentEl.scrollTop = keep;
@@ -840,11 +869,38 @@ function timeline(id) {
     for (const { b, d } of bs.filter(x => x.d >= s.d && x.d < segEnd)) {
       const toNext = (segEnd - d) / BUS_PX;
       const nextName = STOP[(r.stops[k + 1] || r.stops[0]).id].name;
-      h += `<div class="tl-row tl-bus"><span class="tl-rail" style="background:${r.color}"></span><span class="bchip" style="background:${r.color};color:${textOn(r.color)}">${ROUTE_INFO[id].letter}</span>
-        <span class="grow s13">Bus ${b.num} · ${toNext < 45 ? "arriving at" : mins(toNext) + " min to"} ${esc(nextName)}</span></div>`;
+      h += `<button class="tl-row tl-bus" data-act="bus" data-num="${b.num}"><span class="tl-rail" style="background:${r.color}"></span><span class="bchip" style="background:${r.color};color:${textOn(r.color)}">${ROUTE_INFO[id].letter}</span>
+        <span class="grow s13">Bus ${b.num} · ${toNext < 45 ? "arriving at" : mins(toNext) + " min to"} ${esc(nextName)}</span>${I.chevSm}</button>`;
     }
   });
   return h + `</div>`;
+}
+/* one bus: every stop it reaches over the next full loop, in order, with clock times */
+function busTimeline(b) {
+  const r = b.r, d = busD(b);
+  const list = (r.loop ? r.stops.slice(0, -1) : r.stops).map(s => ({ s, t: mod(s.d - d, r.len) / BUS_PX }))
+    .sort((a, c) => a.t - c.t);
+  // the stop it just left: the one furthest "ahead", i.e. reached last on the loop
+  const prev = list[list.length - 1];
+  const upcoming = list.slice(0, -1);
+  const col = r.color, fg = textOn(col);
+  const clockAt = t => fmtClock(Math.floor(simT / 60) * 60 + mins(t) * 60);   // matches the status-bar clock + the "in N min" text
+  let h = `<div class="sec-head"><h2>Upcoming stops</h2><span class="s13">Full loop ${mins(r.period)} min</span></div><div class="card tl">`;
+  h += `<div class="tl-row tl-bus tl-head"><span class="tl-rail" style="background:${col}"></span><span class="bchip" style="background:${col};color:${fg}">${ROUTE_INFO[b.id].letter}</span>
+    <span class="grow"><div class="t17r">Bus ${b.num} is here</div><div class="s13">Left ${esc(STOP[prev.s.id].name)}</div></span></div>`;
+  upcoming.forEach(({ s, t }, k) => {
+    const st = STOP[s.id];
+    h += `<button class="tl-row" data-act="stop" data-id="${s.id}"><span class="tl-rail" style="background:${col}"></span>
+      <span class="tl-dot" style="border-color:${col}"></span><span class="grow">${k === 0 ? `<div class="tag">Next stop</div>` : ""}<div class="t17r">${esc(st.name)}</div></span>
+      <span class="eta"><div class="clock">${clockAt(t)}</div><div class="in">${k === 0 ? I.live : ""}${t < 45 ? "Arriving" : "in " + mins(t) + " min"}</div></span></button>`;
+  });
+  h += `<button class="tl-row last" data-act="stop" data-id="${prev.s.id}"><span class="tl-rail" style="background:${col}"></span>
+    <span class="tl-dot" style="border-color:${col}"></span><span class="grow"><div class="t17r">${esc(STOP[prev.s.id].name)}</div><div class="s13">Back where it started</div></span>
+    <span class="eta"><div class="clock">${clockAt(prev.t)}</div><div class="in">in ${mins(prev.t)} min</div></span></button>`;
+  h += `</div>`;
+  if (!follow) h += `<button class="walk-opt follow" data-act="follow"><span class="poi" style="background:${col};color:${fg}">${I.bus(18)}</span><span class="grow"><div class="t17r">Follow this bus</div><div class="s15">Keep it centered on the map</div></span></button>`;
+  h += `<div class="note">Times assume the bus keeps its current pace. On a real ride, Bussin would update them from the live feed.</div>`;
+  return h;
 }
 
 /* don't rebuild the sheet while a finger is down on it */
@@ -863,6 +919,8 @@ document.getElementById("sheet").addEventListener("click", e => {
   else if (a === "plan") push({ v: "plan", key: b.dataset.key });
   else if (a === "stop") push({ v: "stop", id: b.dataset.id });
   else if (a === "route") push({ v: "route", id: b.dataset.id });
+  else if (a === "bus") push({ v: "bus", num: b.dataset.num });
+  else if (a === "follow") { follow = busByNum(v.num); const p = at(follow.r, busD(follow)); camCenter(p.x, p.y, Math.max(cam.z, 1)); render(); }
   else if (a === "opt") { v.sel = +b.dataset.k; if (v.sel < 0) v.sel = 99; render(); drawPlan(v); }
 });
 document.getElementById("recenter").addEventListener("click", e => {
@@ -884,6 +942,10 @@ function frame(now) {
     const p = at(el.bus.r, busD(el.bus));
     el.wx = p.x; el.wy = p.y;
     el.querySelector(".arrow").style.transform = `rotate(${(p.ang + 90).toFixed(0)}deg)`;
+  }
+  if (follow && !camAnim) {
+    const v = visibleRect(), p = at(follow.r, busD(follow));
+    cam.tx = (v.x0 + v.x1) / 2 - p.x * cam.z; cam.ty = (v.y0 + v.y1) / 2 - p.y * cam.z;
   }
   applyCam();
   if (now - lastRender > 1000) {
