@@ -4,7 +4,7 @@ import CoreLocation
 /// The Apple Maps-style panel: always on screen, three heights, map usable behind it.
 struct SheetHost: View {
     let store: ShuttleStore
-    @Binding var path: NavigationPath
+    @Binding var path: [Place]          // the map reads path.last to know what to focus
     let userCoordinate: CLLocationCoordinate2D?
 
     static let peek = PresentationDetent.height(140)
@@ -29,19 +29,7 @@ struct SheetHost: View {
     }
 }
 
-// Temporary stand-ins so the build stays green; replaced in the next tasks.
-struct StopView: View {
-    let store: ShuttleStore
-    let stopId: String
-    var body: some View { Text(store.stop(stopId)?.name ?? stopId) }
-}
-
-struct RouteView: View {
-    let store: ShuttleStore
-    let routeId: String
-    var body: some View { Text(store.route(for: routeId)?.name ?? routeId) }
-}
-
+// Temporary stand-in so the build stays green; replaced in the next task.
 struct BusView: View {
     let store: ShuttleStore
     let busId: Int
