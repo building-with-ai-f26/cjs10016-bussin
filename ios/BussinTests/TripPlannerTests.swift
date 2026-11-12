@@ -124,6 +124,20 @@ final class TripPlannerTests: XCTestCase {
         XCTAssertEqual(plan.verdict, .tooFar)
     }
 
+    func testALongTripStillOffersASlowShuttle() throws {
+        let w = try world()
+        let t = try longRide(w)
+        // You just missed the only bus and it is crawling, so the shuttle is slower than walking.
+        // But the walk is over 45 minutes, and nobody wants to be told to walk that.
+        let planner = TripPlanner(geometries: w.gs, stops: w.stops,
+                                  buses: [bus(1, t.route.id, at: t.board.distance + 200, g: t.g, speed: 1.5)])
+        let plan = planner.plan(from: try w.coord(t.board.stopId), to: try w.coord(t.alight.stopId))
+        XCTAssertGreaterThan(plan.walkSeconds, TripPlanner.tooFarToWalk, "fixture check: this is a long walk")
+        let o = try XCTUnwrap(plan.options.first)
+        XCTAssertGreaterThan(o.total, plan.walkSeconds, "fixture check: the shuttle really is slower")
+        XCTAssertEqual(plan.verdict, .shuttle)
+    }
+
     func testNoBusesMeansNoOptionsAndNamesIdleRoutes() throws {
         let w = try world()
         let t = try longRide(w)

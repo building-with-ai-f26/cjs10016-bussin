@@ -52,7 +52,7 @@ struct TripView: View {
         List {
             if userCoordinate == nil {
                 Text("Location is off, so this starts from 715 Broadway.")
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .font(.footnote).foregroundStyle(Color.secondary)
             }
             if !plan.options.isEmpty {
                 Section("Shuttle") {
@@ -66,7 +66,8 @@ struct TripView: View {
             Section(plan.options.isEmpty ? "Best way there" : "Or") {
                 if plan.verdict == .tooFar {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("The shuttles don't go near there").font(.headline)
+                        Text(plan.idleRouteIds.isEmpty ? "The shuttles don't go near there"
+                                                      : "No shuttle is running there right now").font(.headline)
                         Text("It's about \(Fmt.distance(plan.walkMeters)) away.")
                             .font(.subheadline).foregroundStyle(.secondary)
                     }
@@ -77,12 +78,12 @@ struct TripView: View {
                 }
             }
             if plan.verdict != .tooFar {
-                Section { Text(walkingSource(plan)).font(.footnote).foregroundStyle(.secondary) }
+                Section { Text(walkingSource(plan)).font(.footnote).foregroundStyle(Color.secondary) }
             }
             if !plan.idleRouteIds.isEmpty {
                 Section {
                     Text(idleNote(plan.idleRouteIds.compactMap { store.route(for: $0)?.name }))
-                        .font(.footnote).foregroundStyle(.secondary)
+                        .font(.footnote).foregroundStyle(Color.secondary)
                 }
             }
         }
@@ -115,10 +116,10 @@ struct TripView: View {
             VStack(alignment: .leading, spacing: 2) {
                 LiveLabel(text: "Bus in \(Fmt.eta(o.busArrives).lowercased())")
                 Text("Arrive \(Fmt.clock(Date.now.addingTimeInterval(o.total)))")
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .font(.footnote).foregroundStyle(Color.secondary)
             }
             Spacer()
-            Text(about(o.isEstimate) + Fmt.minutes(o.total)).font(.title3.weight(.semibold)).foregroundStyle(.primary)
+            Text(about(o.isEstimate) + Fmt.minutes(o.total)).font(.title3.weight(.semibold)).foregroundStyle(Color.primary)
         }
         .padding(.vertical, 4)
     }
@@ -138,12 +139,12 @@ struct TripView: View {
         HStack(spacing: 12) {
             Image(systemName: "figure.walk").font(.title3).frame(width: 30)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Walk the whole way").foregroundStyle(.primary)
+                Text("Walk the whole way").foregroundStyle(Color.primary)
                 Text("\(Fmt.distance(plan.walkMeters)) · arrive \(Fmt.clock(Date.now.addingTimeInterval(plan.walkSeconds)))")
-                    .font(.footnote).foregroundStyle(.secondary)
+                    .font(.footnote).foregroundStyle(Color.secondary)
             }
             Spacer()
-            Text(about(plan.isEstimate) + Fmt.minutes(plan.walkSeconds)).font(.title3.weight(.semibold)).foregroundStyle(.primary)
+            Text(about(plan.isEstimate) + Fmt.minutes(plan.walkSeconds)).font(.title3.weight(.semibold)).foregroundStyle(Color.primary)
         }
         .padding(.vertical, 4)
     }

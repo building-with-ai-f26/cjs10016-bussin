@@ -33,9 +33,9 @@ struct SearchView: View {
                     ForEach(search.suggestions, id: \.self) { s in
                         Button { Task { await pick(s) } } label: {
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(s.title).foregroundStyle(.primary)
+                                Text(s.title).foregroundStyle(Color.primary)
                                 if !s.subtitle.isEmpty {
-                                    Text(s.subtitle).font(.footnote).foregroundStyle(.secondary)
+                                    Text(s.subtitle).font(.footnote).foregroundStyle(Color.secondary)
                                 }
                             }
                         }
@@ -55,7 +55,7 @@ struct SearchView: View {
         if !places.isEmpty {
             Section(title) {
                 ForEach(places) { d in
-                    Button { open(d) } label: { Label(d.name, systemImage: icon).foregroundStyle(.primary) }
+                    Button { open(d) } label: { Label(d.name, systemImage: icon).foregroundStyle(Color.primary) }
                 }
             }
         }

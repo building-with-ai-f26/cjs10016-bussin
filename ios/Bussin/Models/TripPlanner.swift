@@ -80,7 +80,8 @@ struct TripPlanner {
         let running = Set(buses.map(\.bus.routeId))
         let options = running.sorted()
             .compactMap { bestOption(routeId: $0, from: origin, to: dest, walks: walks) }
-            .filter { $0.total < walk - Self.mustBeatWalkingBy && $0.walkFromStop < walk }
+            // A shuttle has to beat walking, unless the walk is so long that a slow shuttle is still the sane choice.
+            .filter { ($0.total < walk - Self.mustBeatWalkingBy || walk > Self.tooFarToWalk) && $0.walkFromStop < walk }
             .sorted { $0.total < $1.total }
             .prefix(3)
 
