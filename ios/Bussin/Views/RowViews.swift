@@ -5,6 +5,8 @@ enum Place: Hashable {
     case stop(String)
     case route(String)
     case bus(Int)
+    case search
+    case trip(Destination)
 }
 
 /// Rounded square in the route's feed color with its letter (DESIGN.md: Route Badge).

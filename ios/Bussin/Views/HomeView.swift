@@ -3,13 +3,11 @@ import CoreLocation
 
 struct HomeView: View {
     let store: ShuttleStore
+    let saved: SavedPlaces
     let userCoordinate: CLLocationCoordinate2D?
 
-    /// 715 Broadway stands in until location arrives (PRODUCT.md).
-    private static let hub = CLLocationCoordinate2D(latitude: 40.72927, longitude: -73.99394)
-
     private var nearestStop: ShuttleStop? {
-        let from = userCoordinate ?? Self.hub
+        let from = userCoordinate ?? TripView.hub
         return store.stops
             .filter { !store.runningRouteIds(at: $0).isEmpty }
             .min { Walk.meters($0.coordinate, from) < Walk.meters($1.coordinate, from) }
@@ -18,6 +16,21 @@ struct HomeView: View {
 
     var body: some View {
         List {
+            Section {
+                NavigationLink(value: Place.search) {
+                    Label("Where to?", systemImage: "magnifyingglass").foregroundStyle(.secondary)
+                }
+            }
+            if !saved.favorites.isEmpty {
+                Section("Favorites") {
+                    ForEach(saved.favorites) { placeRow($0, icon: "star.fill", tint: .yellow) }
+                }
+            }
+            if !saved.homeRecents.isEmpty {
+                Section("Recent") {
+                    ForEach(saved.homeRecents) { placeRow($0, icon: "clock", tint: .secondary) }
+                }
+            }
             if let stop = nearestStop {
                 Section("Nearest stop") {
                     NavigationLink(value: Place.stop(stop.id)) {
@@ -71,6 +84,27 @@ struct HomeView: View {
         .scrollContentBackground(.hidden)
         .navigationTitle("Bussin")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func placeRow(_ d: Destination, icon: String, tint: Color) -> some View {
+        NavigationLink(value: Place.trip(d)) {
+            HStack(spacing: 12) {
+                Image(systemName: icon).foregroundStyle(tint).frame(width: 30)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(d.name)
+                    Text(summary(for: d)).font(.footnote).foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
+
+    /// A quick straight-line answer, so it says "about". The trip screen has Apple's real walking times.
+    private func summary(for d: Destination) -> String {
+        let plan = store.planner.plan(from: userCoordinate ?? TripView.hub, to: d.coordinate)
+        if let o = plan.options.first, let r = store.route(for: o.routeId) {
+            return "\(r.name) · about \(Fmt.minutes(o.total))"
+        }
+        return plan.verdict == .tooFar ? "No shuttle goes there" : "Walk about \(Fmt.minutes(plan.walkSeconds))"
     }
 
     private func walkText(to stop: ShuttleStop) -> String {

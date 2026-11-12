@@ -41,6 +41,27 @@ enum Analytics {
                 "route": tb.flatMap { store.route(for: $0.bus.routeId)?.letter } ?? "",
                 "riders_aboard": tb?.bus.ridersAboard ?? -1,
             ])
+        case .search, .trip:
+            break       // the trip screen reports its own answer through planned(_:store:)
+        }
+    }
+
+    /// What the planner answered. Records the route and stops, never the searched address.
+    @MainActor
+    static func planned(_ plan: TripPlanner.Plan, store: ShuttleStore) {
+        if let o = plan.options.first {
+            capture("trip_planned", [
+                "route": store.route(for: o.routeId)?.letter ?? o.routeId,
+                "board_stop": store.stop(o.boardStopId)?.name ?? o.boardStopId,
+                "alight_stop": store.stop(o.alightStopId)?.name ?? o.alightStopId,
+                "minutes": Int((o.total / 60).rounded()),
+                "minutes_saved": Int(((plan.walkSeconds - o.total) / 60).rounded()),
+            ])
+        } else {
+            capture("no_good_option", [
+                "walk_minutes": Int((plan.walkSeconds / 60).rounded()),
+                "too_far": plan.verdict == .tooFar,
+            ])
         }
     }
 }

@@ -8,6 +8,8 @@ import Observation
 final class WalkTimes {
     private var legs: [String: WalkLeg] = [:]
     private var paths: [String: [CLLocationCoordinate2D]] = [:]
+    /// True after Apple failed to answer (offline or throttled), until a request works again.
+    private(set) var unreachable = false
     @ObservationIgnored private var inFlight: Set<String> = []
     @ObservationIgnored private var pausedUntil = Date.distantPast
 
@@ -41,9 +43,11 @@ final class WalkTimes {
                 route.polyline.getCoordinates(&coords, range: NSRange(location: 0, length: coords.count))
                 legs[k] = WalkLeg(seconds: route.expectedTravelTime, meters: route.distance)
                 paths[k] = coords
+                unreachable = false
             } catch {
                 // Offline or throttled: back off for a minute and let estimates stand.
                 pausedUntil = .now.addingTimeInterval(60)
+                unreachable = true
                 return
             }
         }

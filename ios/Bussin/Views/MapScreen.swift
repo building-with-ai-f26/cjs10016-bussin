@@ -7,6 +7,9 @@ struct MapScreen: View {
     @State private var locationManager = CLLocationManager()
     @State private var path: [Place] = []
     @State private var sheetShown = true
+    @State private var saved = SavedPlaces()
+    @State private var walks = WalkTimes()
+    @State private var tripSelection: TripPlanner.Option?
     @State private var camera: MapCameraPosition = .region(MapScreen.nyu)
 
     private static let nyu = MKCoordinateRegion(
@@ -21,7 +24,8 @@ struct MapScreen: View {
         case .route(let id): return [id]
         case .stop(let id): return Set(store.stop(id)?.routeIds ?? [])
         case .bus(let id): return store.trackedBuses.first { $0.id == id }.map { [$0.bus.routeId] }
-        case nil: return nil
+        case .trip: return tripSelection.map { [$0.routeId] } ?? []   // walking: every route dims
+        case .search, nil: return nil
         }
     }
 
@@ -68,6 +72,14 @@ struct MapScreen: View {
                 .annotationTitles(.hidden)
             }
 
+            if case .trip(let d) = focus {
+                ForEach(Array(walkLegs(to: d).enumerated()), id: \.offset) { _, leg in
+                    MapPolyline(coordinates: leg)
+                        .stroke(Color.primary, style: StrokeStyle(lineWidth: 4, lineCap: .round, dash: [0.1, 8]))
+                }
+                Marker(d.name, coordinate: d.coordinate).tint(.red)
+            }
+
             UserAnnotation()
         }
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
@@ -81,12 +93,18 @@ struct MapScreen: View {
             }
         }
         .sheet(isPresented: $sheetShown) {
-            SheetHost(store: store, path: $path, userCoordinate: locationManager.location?.coordinate)
+            SheetHost(store: store, path: $path, userCoordinate: locationManager.location?.coordinate,
+                      saved: saved, walks: walks, tripSelection: $tripSelection)
         }
         .onChange(of: path) { old, new in
             withAnimation(.easeInOut(duration: 0.5)) { camera = cameraForFocus() }
             // Count forward navigation only, not going back.
             if new.count >= old.count, let place = new.last { Analytics.viewed(place, store: store) }
+        }
+        .onChange(of: tripSelection?.id) { _, _ in
+            // Re-frame when the rider picks another option.
+            guard case .trip = focus else { return }
+            withAnimation(.easeInOut(duration: 0.5)) { camera = cameraForFocus() }
         }
         .onChange(of: followedBusPosition) { _, _ in
             // Follow the open bus as it moves, like the prototype's follow mode.
@@ -109,6 +127,7 @@ struct MapScreen: View {
     private func openDebugLaunchPlace() async {
         guard let raw = UserDefaults.standard.string(forKey: "place") else { return }
         try? await Task.sleep(for: .seconds(4))   // let the catalog and first bus poll land
+        if raw == "search" { path = [.search]; return }
         let parts = raw.split(separator: ":", maxSplits: 1).map(String.init)
         guard parts.count == 2 else { return }
         switch parts[0] {
@@ -117,10 +136,27 @@ struct MapScreen: View {
         case "bus":
             let id = parts[1] == "first" ? store.trackedBuses.first?.id : Int(parts[1])
             if let id { path = [.bus(id)] }
+        case "trip":    // -place trip:40.6943,-73.9865  (Tandon)
+            let ll = parts[1].split(separator: ",").compactMap { Double($0) }
+            if ll.count == 2 {
+                path = [.trip(Destination(name: "Test destination", subtitle: "", latitude: ll[0], longitude: ll[1]))]
+            }
         default: break
         }
     }
     #endif
+
+    private var tripOrigin: CLLocationCoordinate2D { locationManager.location?.coordinate ?? TripView.hub }
+
+    /// Dotted walking lines: to the stop and from the stop, or straight there if walking.
+    /// Each follows real streets once Apple Maps has answered, and is a straight line until then.
+    private func walkLegs(to d: Destination) -> [[CLLocationCoordinate2D]] {
+        var ends = [(tripOrigin, d.coordinate)]
+        if let o = tripSelection, let board = store.stop(o.boardStopId), let alight = store.stop(o.alightStopId) {
+            ends = [(tripOrigin, board.coordinate), (alight.coordinate, d.coordinate)]
+        }
+        return ends.map { walks.path($0.0, $0.1) ?? [$0.0, $0.1] }
+    }
 
     /// Changes whenever the open bus reports a new position.
     private var followedBusPosition: String {
@@ -152,7 +188,13 @@ struct MapScreen: View {
         case .bus(let id):
             guard let b = store.trackedBuses.first(where: { $0.id == id }) else { return .region(Self.nyu) }
             return .region(regionAbovePanel(fitting: [b.bus.coordinate], minSpan: 0.01))
-        case nil:
+        case .trip(let d):
+            var pts = [tripOrigin, d.coordinate]
+            if let o = tripSelection {
+                pts += [o.boardStopId, o.alightStopId].compactMap { store.stop($0)?.coordinate }
+            }
+            return .region(regionAbovePanel(fitting: pts))
+        case .search, nil:
             return .region(Self.nyu)
         }
     }

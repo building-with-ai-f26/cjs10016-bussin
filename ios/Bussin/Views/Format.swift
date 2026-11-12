@@ -10,6 +10,11 @@ enum Fmt {
         "\(max(1, Int((seconds / 60).rounded()))) min"
     }
 
+    /// "350 m" under a kilometre, else "1.2 km".
+    static func distance(_ meters: Double) -> String {
+        meters < 1000 ? "\(Int((meters / 10).rounded()) * 10) m" : String(format: "%.1f km", meters / 1000)
+    }
+
     private static let clockFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "h:mm"
