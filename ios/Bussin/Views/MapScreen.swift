@@ -83,8 +83,10 @@ struct MapScreen: View {
         .sheet(isPresented: $sheetShown) {
             SheetHost(store: store, path: $path, userCoordinate: locationManager.location?.coordinate)
         }
-        .onChange(of: path) { _, _ in
+        .onChange(of: path) { old, new in
             withAnimation(.easeInOut(duration: 0.5)) { camera = cameraForFocus() }
+            // Count forward navigation only, not going back.
+            if new.count >= old.count, let place = new.last { Analytics.viewed(place, store: store) }
         }
         .onChange(of: followedBusPosition) { _, _ in
             // Follow the open bus as it moves, like the prototype's follow mode.
