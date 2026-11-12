@@ -1,0 +1,229 @@
+<title>Bussin Build Map</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* Layout: one vertical route line, phases as colored segments, tasks as stops, the bus = where we are. */
+  :root {
+    --bg: #f4f2ed;            /* map-land from the app's design system */
+    --card: #ffffff;
+    --ink: #1c1c1e;
+    --ink-2: rgba(60, 60, 67, 0.72);
+    --ink-3: rgba(60, 60, 67, 0.45);
+    --line: rgba(60, 60, 67, 0.16);
+    --blue: #007aff;
+    --live: #248a3d;
+    --amber: #b8860b;
+    --stop-fill: #ffffff;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1c1c1e; --card: #2c2c2e; --ink: #f2f2f7; --ink-2: rgba(235,235,245,0.68);
+      --ink-3: rgba(235,235,245,0.4); --line: rgba(235,235,245,0.14); --blue: #0a84ff;
+      --live: #30d158; --amber: #ffd60a; --stop-fill: #3a3a3c; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1c1c1e; --card: #2c2c2e; --ink: #f2f2f7; --ink-2: rgba(235,235,245,0.68);
+    --ink-3: rgba(235,235,245,0.4); --line: rgba(235,235,245,0.14); --blue: #0a84ff;
+    --live: #30d158; --amber: #ffd60a; --stop-fill: #3a3a3c; color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 48px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+
+  header h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+  header p { margin: 6px 0 0; color: var(--ink-2); font-size: 15px; }
+  .updated { font-size: 13px; color: var(--ink-3); margin-top: 4px; }
+
+  .summary { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 26px; }
+  .pill { font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); color: var(--ink-2); }
+  .pill b { color: var(--ink); font-weight: 700; }
+  .pill.now { border-color: var(--live); color: var(--live); }
+
+  /* The route */
+  .phase { position: relative; padding: 0 0 8px 44px; }
+  .rail { position: absolute; left: 14px; top: 0; bottom: 0; width: 8px; border-radius: 4px; }
+  .phase:last-of-type .rail { bottom: auto; height: 100%; border-radius: 4px 4px 12px 12px; }
+  .phase-head { display: flex; align-items: center; gap: 10px; padding: 14px 0 6px; flex-wrap: wrap; }
+  .badge { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-weight: 800; font-size: 17px; color: #fff; flex: none; margin-left: -57px; border: 3px solid var(--bg); position: relative; z-index: 1; }
+  .phase-head h2 { font-size: 19px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .phase-head .when { font-size: 13px; color: var(--ink-2); }
+  .status { font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
+  .status.done { background: var(--live); color: #fff; }
+  .status.now { background: var(--blue); color: #fff; }
+  .status.next { background: var(--card); color: var(--ink-2); border: 1px solid var(--line); }
+
+  ul.stops { list-style: none; margin: 4px 0 10px; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+  .stop { position: relative; font-size: 15px; color: var(--ink); line-height: 1.4; }
+  .stop::before { content: ""; position: absolute; left: -34px; top: 4px; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--stop-fill); border: 3px solid var(--ink-3); }
+  .stop.done { color: var(--ink-2); }
+  .stop.done::before { content: "✓"; background: var(--live); border-color: var(--live);
+    display: grid; place-items: center; font-size: 9px; line-height: 1; font-weight: 800; color: #fff; }
+  .stop small { color: var(--ink-3); font-size: 13px; }
+  .model { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--card); border: 1px dashed var(--ink-3); color: var(--ink-2); }
+  .model b { color: var(--ink); font-weight: 700; }
+  .mtag { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.03em; padding: 1px 7px; border-radius: 999px; margin-left: 6px; vertical-align: 1px; }
+  .mtag.top { background: rgba(10, 132, 255, 0.14); color: var(--blue); }
+  .mtag.mid { background: rgba(36, 138, 61, 0.14); color: var(--live); }
+  .mtag.low { background: rgba(184, 134, 11, 0.16); color: var(--amber); }
+
+  /* the bus = current position */
+  .bus { position: relative; display: flex; align-items: center; gap: 10px; margin: 10px 0 12px; font-size: 14px; font-weight: 600; color: var(--blue); }
+  .bus .mk { width: 30px; height: 30px; border-radius: 50%; margin-left: -59px; display: grid; place-items: center;
+    background: var(--blue); color: #fff; font-weight: 800; font-size: 13px; border: 3px solid #fff;
+    box-shadow: 0 0 0 4px rgba(10,132,255,0.3), 0 2px 6px rgba(0,0,0,0.35); z-index: 2; position: relative;
+    animation: pulse 2s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .bus .mk { animation: none; } }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 4px rgba(10,132,255,0.3), 0 2px 6px rgba(0,0,0,0.35); } 50% { box-shadow: 0 0 0 9px rgba(10,132,255,0.12), 0 2px 6px rgba(0,0,0,0.35); } }
+
+  .sidequests { margin-top: 30px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; }
+  .sidequests h3 { margin: 0 0 4px; font-size: 15px; font-weight: 700; }
+  .sidequests p.sub { margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .sidequests ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .sidequests li { font-size: 14px; color: var(--ink); padding-left: 22px; position: relative; }
+  .sidequests li::before { content: ""; position: absolute; left: 2px; top: 3px; width: 10px; height: 10px; border-radius: 3px; border: 2px solid var(--amber); }
+  .sidequests li.done { color: var(--ink-3); text-decoration: line-through; }
+  .sidequests li.done::before { background: var(--live); border-color: var(--live); }
+  .sidequests li small { color: var(--ink-3); }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 22px; font-size: 13px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+</style>
+<div class="wrap">
+  <header>
+    <h1>Bussin Build Map</h1>
+    <p>Every phase is a route. Every task is a stop. The bus is where we are.</p>
+    <p class="updated">Updated Nov 11, 2026 · phase 2 done: real arrival times and every screen you can tap</p>
+  </header>
+
+  <div class="summary">
+    <span class="pill"><b>21</b> automatic checks passing</span>
+    <span class="pill"><b>Rider counts</b> logged every 15 min</span>
+    <span class="pill now"><b>Next:</b> trip planning, then your phone</span>
+    <span class="pill"><b>Build 2</b> due Sun Nov 16</span>
+    <span class="pill"><b>Model next:</b> Opus or Fable for the planner math</span>
+  </div>
+
+  <!-- Phase 1 -->
+  <section class="phase">
+    <span class="rail" style="background:#248a3d"></span>
+    <div class="phase-head">
+      <span class="badge" style="background:#248a3d">1</span>
+      <h2>Walking skeleton</h2>
+      <span class="status done">Done · Nov 10</span>
+      <span class="model">built on <b>Fable</b></span>
+    </div>
+    <ul class="stops">
+      <li class="stop done">Created the app's empty shell <small>· the container all the code lives in</small></li>
+      <li class="stop done">Saved a copy of NYU's bus data <small>· so we can test against the real thing</small></li>
+      <li class="stop done">Taught the app to read that data <small>· all 7 routes, every stop, live buses</small></li>
+      <li class="stop done">Connected the app to the live feed <small>· the same source Passio GO uses</small></li>
+      <li class="stop done">Gave the app a memory <small>· checks for new bus positions every 4 seconds, keeps working if the feed hiccups</small></li>
+      <li class="stop done">Buses moving on a real Apple map <small>· tested on a pretend iPhone on your Mac, in light and dark mode</small></li>
+      <li class="stop done">Usage tracking ready <small>· switches on when you add your PostHog key</small></li>
+      <li class="stop done">A robot now counts riders on every bus <small>· runs in the cloud, day and night</small></li>
+    </ul>
+  </section>
+
+  <!-- Phase 2 -->
+  <section class="phase">
+    <span class="rail" style="background:#248a3d"></span>
+    <div class="phase-head">
+      <span class="badge" style="background:#248a3d">2</span>
+      <h2>Arrival times + screens</h2>
+      <span class="status done">Done · Nov 11</span>
+      <span class="model"><b>Fable/Opus</b> for the math → <b>Sonnet</b> for screens</span>
+    </div>
+    <ul class="stops">
+      <li class="stop done">Arrival math <small>· turn bus positions into "your bus is 3 minutes away"</small><span class="mtag top">Fable/Opus</span></li>
+      <li class="stop done">Ignore glitchy GPS <small>· a bus once claimed it was in New Hampshire</small><span class="mtag top">Fable/Opus</span></li>
+    </ul>
+    <ul class="stops">
+      <li class="stop done">The slide-up panel <small>· like the one in Apple Maps</small><span class="mtag mid">Sonnet</span></li>
+      <li class="stop done">Home screen <small>· your nearest stop and its next departures</small><span class="mtag mid">Sonnet</span></li>
+      <li class="stop done">Tap anything for details <small>· stops, routes, and individual buses</small><span class="mtag mid">Sonnet</span></li>
+      <li class="stop done">Map tidying <small>· your blue dot draws on top of the buses</small><span class="mtag mid">Sonnet</span></li>
+      <li class="stop done">Red lights no longer scramble arrival times <small>· a bug we caught on live data</small><span class="mtag top">Fable/Opus</span></li>
+    </ul>
+  </section>
+
+  <!-- Phase 3 -->
+  <section class="phase">
+    <span class="rail" style="background:#CD5C5C"></span>
+    <div class="phase-head">
+      <span class="badge" style="background:#CD5C5C">3</span>
+      <h2>Trip planner — then it goes on your phone</h2>
+      <span class="status now">Up now</span>
+      <span class="model"><b>Fable/Opus</b> for the planner → <b>Sonnet</b> for search</span>
+    </div>
+    <div class="bus"><span class="mk">B</span>The bus is here — next stop: ride or walk?</div>
+    <ul class="stops">
+      <li class="stop">Ride or walk? <small>· the app compares every shuttle option against just walking</small><span class="mtag top">Fable/Opus</span></li>
+      <li class="stop">Search <small>· type "Tandon" and get an answer</small><span class="mtag mid">Sonnet</span></li>
+      <li class="stop">Install on your iPhone <small>· you start riding with it daily</small></li>
+    </ul>
+  </section>
+
+  <!-- Phase 4 -->
+  <section class="phase">
+    <span class="rail" style="background:#9370DB"></span>
+    <div class="phase-head">
+      <span class="badge" style="background:#9370DB">4</span>
+      <h2>Share-ready</h2>
+      <span class="status next">Then</span>
+      <span class="model"><b>Sonnet</b> · <b>Haiku</b> for chores · <b>Fable/Opus</b> for writing</span>
+    </div>
+    <ul class="stops">
+      <li class="stop">App icon <small>· needs your logo pick first</small><span class="mtag low">Haiku</span></li>
+      <li class="stop">Smooth first open <small>· friendly messages when something goes wrong</small><span class="mtag mid">Sonnet</span></li>
+      <li class="stop">A link classmates can install from <small>· Apple's TestFlight</small><span class="mtag mid">Sonnet</span></li>
+      <li class="stop">See who's actually using it <small>· counts users, trips planned, routes viewed</small><span class="mtag mid">Sonnet</span></li>
+      <li class="stop">The weekly write-ups for class<span class="mtag top">Fable/Opus</span></li>
+    </ul>
+  </section>
+
+  <!-- Phase 5 -->
+  <section class="phase">
+    <span class="rail" style="background:#f7b6d2"></span>
+    <div class="phase-head">
+      <span class="badge" style="background:#f7b6d2;color:#1c1c1e">5</span>
+      <h2>The big ideas</h2>
+      <span class="status next">Later</span>
+      <span class="model"><b>Sonnet</b> · <b>Fable/Opus</b> where judgment matters</span>
+    </div>
+    <ul class="stops">
+      <li class="stop">Service alerts <small>· know when a shuttle is down or on holiday schedule</small><span class="mtag mid">Sonnet</span></li>
+      <li class="stop">Campus Safety report button <small>· help is one tap away, with your bus attached</small><span class="mtag top">Fable/Opus</span></li>
+      <li class="stop">Ride mode <small>· one rider aboard sharing location makes the map better for everyone</small></li>
+      <li class="stop">Smarter arrival guesses <small>· first live traffic, later learning from months of our own data</small></li>
+      <li class="stop">"Leave now" reminders <small>· timed to your walk and your usual bus</small></li>
+      <li class="stop">The pitch to NYU <small>· months of rider counts as evidence for better routes</small></li>
+    </ul>
+  </section>
+
+  <aside class="sidequests">
+    <h3>Your stops, Chris</h3>
+    <p class="sub">Things only you can do — none block the build today.</p>
+    <ul>
+      <li>Enroll in the Apple Developer Program <small>· $99 — needed for TestFlight in phase 4</small></li>
+      <li>Create the PostHog account &amp; drop the key in <small>· any time before phase 4</small></li>
+      <li>Pick the logo <small>· Mosaic, Station sign, or Bus LED — blocks the app icon</small></li>
+      <li>Email NYU Transportation about feed permission <small>· the standing risk</small></li>
+    </ul>
+  </aside>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--live)"></span>Stop reached</span>
+    <span><span class="dot" style="background:var(--stop-fill);border:3px solid var(--ink-3);width:7px;height:7px"></span>Stop ahead</span>
+    <span><span class="dot" style="background:var(--blue);box-shadow:0 0 0 3px rgba(10,132,255,.25)"></span>The bus (we're here)</span>
+    <span><span class="mtag top" style="margin:0">Fable/Opus</span>&nbsp;deep reasoning · <span class="mtag mid" style="margin:0">Sonnet</span>&nbsp;fast building · <span class="mtag low" style="margin:0">Haiku</span>&nbsp;chores</span>
+  </div>
+</div>
