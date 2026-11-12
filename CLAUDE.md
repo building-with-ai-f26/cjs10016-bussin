@@ -17,7 +17,7 @@ This file holds the working agreements and current state that used to live only 
 - **Pace.** Chris builds ahead of the class calendar and logs each class build in `docs/index.html` before it is due.
 - **Workflow.** Use the superpowers flow: brainstorm, then write a plan in `docs/superpowers/plans/`, then execute it inline, then finish the branch. Run tests before claiming anything works.
 
-## Where things stand (Nov 11, 2026)
+## Where things stand (Nov 12, 2026)
 
 - **Phase 1 is merged.** This is the walking skeleton: live buses, routes, and stops on Apple Maps, with the Passio feed parsed and tested.
 - **Phase 2 is merged.** It added ETAs and the four screens:
@@ -26,11 +26,12 @@ This file holds the working agreements and current state that used to live only 
   - `ETAEngine` turns that into arrival times.
   - The slide-up sheet has Home, Stop, Route, and Bus screens. The map focuses on whatever is open and follows the open bus.
   - 21 XCTests cover all of this.
-- **Phase 3 is built on branch `ios-phase-3`, not yet merged.** It added trip planning:
+- **Phase 3 is merged.** It added trip planning and put the app on Chris's iPhone:
   - Search any address or place through Apple Maps (`PlaceSearch`).
   - `TripPlanner` compares each running shuttle against walking. It shortlists stops with straight-line estimates, then re-times them with real Apple Maps walking routes from `WalkTimes` (at most 9 requests per trip, cached).
   - Favorites and the two latest searches sit on Home (`SavedPlaces`, stored on the phone).
   - Analytics send `trip_planned` and `no_good_option`, never the searched address.
+  - Buses slide between feed updates (`GlidingMarker`). Home starts with the search row and shows the truly nearest stop, plus the nearest stop with a bus running when they differ.
   - 39 XCTests pass.
   - Installed on Chris's iPhone on Nov 11 signed with Chris's paid Apple Developer team. The signing profile runs until Nov 12, 2027. The team ID lives in `ios/Secrets.xcconfig` as `DEVELOPMENT_TEAM`. To reinstall: build with `-destination 'id=<phone UDID>' -allowProvisioningUpdates`, then `xcrun devicectl device install app`.
 - **PostHog is live.**
@@ -42,7 +43,7 @@ This file holds the working agreements and current state that used to live only 
 ## What's next
 
 1. **Build 2 (due Nov 16).** Chris needs to screenshot the `$pageview` and `clicked_try_product` events in PostHog and fill in the hours in the Build 2 log in `docs/index.html`.
-2. **Finish Phase 3.** Chris rides with the app for a day, checks a daytime trip where a shuttle beats walking, then merge `ios-phase-3`.
+2. **Ride-test Phase 3.** Chris rides with the app for a day. Still unseen with real buses: a daytime trip where a shuttle beats walking, smooth bus movement, and the "bus is at your stop" note.
    - A bus waiting at your boarding stop: if you're within a minute's walk the planner boards it; from further away it quotes the next sure bus and adds a "may leave without you" note. The app has no timetable, so it can't say when a waiting bus departs. Not yet seen live in the simulator, only in tests.
 3. **Phase 4: share-ready.** Get the app ready for TestFlight. The app uses the Station sign icon for now (Chris's pick on Nov 12, may change). `swift tools/make-app-icon.swift` redraws it. The final icon still needs rebuilding as layers in Apple's Icon Composer.
 4. **Phase 5: roadmap.**
