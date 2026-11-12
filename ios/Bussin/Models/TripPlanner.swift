@@ -34,6 +34,8 @@ struct TripPlanner {
     static let mustBeatWalkingBy = 60.0       // a shuttle that saves under a minute isn't worth it
     static let tooFarToWalk = 45 * 60.0
     static let nearDestination = 5 * 60.0     // "also stops near here" radius
+    static let atStopMeters = 40.0            // a bus this close to the stop marker is "at the stop"
+    static let alreadyThere = 60.0            // within a minute's walk, you can board a waiting bus
 
     let geometries: [String: RouteGeometry]
     let stops: [String: ShuttleStop]
@@ -50,6 +52,9 @@ struct TripPlanner {
         let total: Double           // busArrives + ride + walkFromStop
         let stopCount: Int
         let isEstimate: Bool        // true until both walks are real Apple Maps times
+        /// A bus is sitting at the boarding stop right now, but the rider isn't there yet.
+        /// We can't know when it will pull out, so the times above are for the next sure bus.
+        var busAtStopNow = false
         var id: String { routeId }
     }
 
@@ -114,7 +119,7 @@ struct TripPlanner {
             guard let boardStop = stops[b.stopId] else { continue }
             let w1 = Walk.seconds(origin, boardStop.coordinate)
             guard w1 <= Self.maxWalkToStop,
-                  let caught = firstCatchable(rbuses, at: b.distance, on: g, notBefore: w1 + Self.boardingBuffer)
+                  let caught = firstCatchable(rbuses, at: b.distance, on: g, walk: w1)
             else { continue }
 
             for (j, a) in entries.enumerated() where a.stopId != b.stopId {
@@ -130,7 +135,8 @@ struct TripPlanner {
                     best = Option(routeId: routeId, boardStopId: b.stopId, alightStopId: a.stopId,
                                   walkToStop: w1, busArrives: caught.time, ride: ride, walkFromStop: w2,
                                   total: total, stopCount: j > i ? j - i : j - i + entries.count,
-                                  isEstimate: true)
+                                  isEstimate: true,
+                                  busAtStopNow: busWaiting(rbuses, at: b.distance, on: g, walk: w1))
                     bestBoardDistance = b.distance
                     bestRideMeters = rideMeters
                 }
@@ -144,24 +150,50 @@ struct TripPlanner {
         guard real1 != nil || real2 != nil else { return pick }
         let w1 = real1?.seconds ?? pick.walkToStop, w2 = real2?.seconds ?? pick.walkFromStop
         // A longer real walk to the stop can mean the bus you'd planned on is gone.
-        guard let caught = firstCatchable(rbuses, at: bestBoardDistance, on: g, notBefore: w1 + Self.boardingBuffer)
+        guard let caught = firstCatchable(rbuses, at: bestBoardDistance, on: g, walk: w1)
         else { return nil }
         let ride = bestRideMeters / caught.speed
         return Option(routeId: routeId, boardStopId: pick.boardStopId, alightStopId: pick.alightStopId,
                       walkToStop: w1, busArrives: caught.time, ride: ride, walkFromStop: w2,
                       total: caught.time + ride + w2, stopCount: pick.stopCount,
-                      isEstimate: real1 == nil || real2 == nil)
+                      isEstimate: real1 == nil || real2 == nil,
+                      busAtStopNow: busWaiting(rbuses, at: bestBoardDistance, on: g, walk: w1))
     }
 
-    /// The first bus to reach `distance` no sooner than `notBefore` seconds from now.
-    /// On a loop a bus you just missed comes round again, so later laps count too.
+    /// Metres the bus still has to drive to reach `distance`, and whether it is sitting at that stop.
+    /// GPS can put a waiting bus a few metres past the stop marker; that is still "at the stop",
+    /// not a full lap away.
+    private func approach(_ bus: TrackedBus, to distance: Double, on g: RouteGeometry) -> (gap: Double, atStop: Bool) {
+        var gap = (distance - bus.distanceAlong).truncatingRemainder(dividingBy: g.length)
+        if gap < 0 { gap += g.length }
+        let atStop = gap <= Self.atStopMeters || gap >= g.length - Self.atStopMeters
+        return (atStop ? 0 : gap, atStop)
+    }
+
+    /// True when a bus is at the stop right now but the rider is still walking there.
+    private func busWaiting(_ rbuses: [TrackedBus], at distance: Double, on g: RouteGeometry, walk: Double) -> Bool {
+        walk > Self.alreadyThere && rbuses.contains { approach($0, to: distance, on: g).atStop }
+    }
+
+    /// The first bus the rider can count on catching at `distance`, given their walk there.
+    /// A bus that is still driving must arrive after the rider does. A bus already waiting at the
+    /// stop can be boarded only if the rider is basically there; nobody knows when it will pull out,
+    /// so from further away the promise is that bus's next lap. On a loop, later laps count too.
     private func firstCatchable(_ rbuses: [TrackedBus], at distance: Double, on g: RouteGeometry,
-                                notBefore: Double) -> (time: Double, speed: Double)? {
+                                walk: Double) -> (time: Double, speed: Double)? {
+        let notBefore = walk + Self.boardingBuffer
         var best: (time: Double, speed: Double)?
         for bus in rbuses {
-            var gap = (distance - bus.distanceAlong).truncatingRemainder(dividingBy: g.length)
-            if gap < 0 { gap += g.length }
-            for lap in 0...(g.isLoop ? 3 : 0) {
+            let (gap, atStop) = approach(bus, to: distance, on: g)
+            if atStop && walk <= Self.alreadyThere {
+                if best == nil || walk < best!.time { best = (walk, bus.speed) }
+                continue
+            }
+            // A waiting bus is gone by the time you arrive, so start from its next lap.
+            // A one-way line has no next lap.
+            let firstLap = atStop ? 1 : 0, lastLap = g.isLoop ? 3 : 0
+            guard firstLap <= lastLap else { continue }
+            for lap in firstLap...lastLap {
                 let t = (gap + Double(lap) * g.length) / bus.speed
                 if t >= notBefore {
                     if best == nil || t < best!.time { best = (t, bus.speed) }

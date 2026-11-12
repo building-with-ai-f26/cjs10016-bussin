@@ -138,6 +138,35 @@ final class TripPlannerTests: XCTestCase {
         XCTAssertEqual(plan.verdict, .shuttle)
     }
 
+    func testABusWaitingAtYourStopIsBoardedIfYouAreThere() throws {
+        let w = try world()
+        let t = try longRide(w)
+        // GPS puts the waiting bus 20 m past the stop marker. You are standing at the stop.
+        let planner = TripPlanner(geometries: w.gs, stops: w.stops,
+                                  buses: [bus(1, t.route.id, at: t.board.distance + 20, g: t.g)])
+        let plan = planner.plan(from: try w.coord(t.board.stopId), to: try w.coord(t.alight.stopId))
+        let o = try XCTUnwrap(plan.options.first)
+        XCTAssertLessThanOrEqual(o.busArrives, 60, "you get on the bus in front of you, not the next lap")
+        XCTAssertFalse(o.busAtStopNow)
+    }
+
+    func testABusWaitingAtAStopYouAreWalkingToIsFlaggedNotPromised() throws {
+        let w = try world()
+        let t = try longRide(w)
+        let stop = try w.coord(t.board.stopId)
+        // About 3 minutes' walk from the stop where the bus is sitting.
+        let origin = CLLocationCoordinate2D(latitude: stop.latitude + 200.0 / 111_132.0, longitude: stop.longitude)
+        let planner = TripPlanner(geometries: w.gs, stops: w.stops,
+                                  buses: [bus(1, t.route.id, at: t.board.distance + 20, g: t.g)])
+        let o = try XCTUnwrap(planner.bestOption(routeId: t.route.id, from: origin, to: try w.coord(t.alight.stopId)))
+        if o.boardStopId == t.board.stopId {
+            XCTAssertTrue(o.busAtStopNow, "tell the rider a bus is there right now")
+            XCTAssertGreaterThan(o.busArrives, 600, "but only promise the one they can surely catch")
+        } else {
+            XCTAssertFalse(o.busAtStopNow, "the flag is only about the stop you would board at")
+        }
+    }
+
     func testNoBusesMeansNoOptionsAndNamesIdleRoutes() throws {
         let w = try world()
         let t = try longRide(w)

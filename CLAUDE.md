@@ -31,7 +31,7 @@ This file holds the working agreements and current state that used to live only 
   - `TripPlanner` compares each running shuttle against walking. It shortlists stops with straight-line estimates, then re-times them with real Apple Maps walking routes from `WalkTimes` (at most 9 requests per trip, cached).
   - Favorites and the two latest searches sit on Home (`SavedPlaces`, stored on the phone).
   - Analytics send `trip_planned` and `no_good_option`, never the searched address.
-  - 37 XCTests pass.
+  - 39 XCTests pass.
   - Still open: installing on Chris's iPhone. Chris adds an Apple ID in Xcode and plugs the phone in; the team ID then goes in `ios/Secrets.xcconfig` as `DEVELOPMENT_TEAM`.
 - **PostHog is live.**
   - iOS reads its key from the gitignored `ios/Secrets.xcconfig`, which only exists on Chris's laptop. Analytics is off in any build without it. The app sends named events: `app_opened`, `route_viewed`, `stop_viewed`, and `bus_viewed`. Automatic screen tracking is off.
@@ -43,7 +43,7 @@ This file holds the working agreements and current state that used to live only 
 
 1. **Build 2 (due Nov 16).** Chris needs to screenshot the `$pageview` and `clicked_try_product` events in PostHog and fill in the hours in the Build 2 log in `docs/index.html`.
 2. **Finish Phase 3.** Install on Chris's iPhone, check a daytime trip where a shuttle beats walking, then merge `ios-phase-3`.
-   - Known gap: a bus parked at the stop you'd board counts as missed, so the planner quotes the next lap.
+   - A bus waiting at your boarding stop: if you're within a minute's walk the planner boards it; from further away it quotes the next sure bus and adds a "may leave without you" note. The app has no timetable, so it can't say when a waiting bus departs. Not yet seen live in the simulator, only in tests.
 3. **Phase 4: share-ready.** Get the app ready for TestFlight. The app icon is blocked until Chris picks a logo: Mosaic, Station sign, or Bus LED.
 4. **Phase 5: roadmap.**
    - Service alerts, including holiday schedules.

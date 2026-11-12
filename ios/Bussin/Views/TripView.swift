@@ -59,6 +59,11 @@ struct TripView: View {
                     ForEach(plan.options) { o in
                         Button { choseWalk = false; selection = o } label: { optionRow(o) }
                             .listRowBackground(selection?.id == o.id ? Color.blue.opacity(0.12) : nil)
+                        if o.busAtStopNow {
+                            Label("A bus is at \(store.stop(o.boardStopId)?.name ?? "the stop") right now. You're \(Fmt.minutes(o.walkToStop)) away, so it may leave without you. The time above is the next one.",
+                                  systemImage: "figure.run")
+                                .font(.footnote).foregroundStyle(Color.secondary)
+                        }
                         if selection?.id == o.id { steps(o) }
                     }
                 }
