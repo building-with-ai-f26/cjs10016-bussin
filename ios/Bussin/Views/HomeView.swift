@@ -12,13 +12,8 @@ struct HomeView: View {
         let from = userCoordinate ?? Self.hub
         return store.stops
             .filter { !store.runningRouteIds(at: $0).isEmpty }
-            .min { squaredMeters($0.coordinate, from) < squaredMeters($1.coordinate, from) }
+            .min { Walk.meters($0.coordinate, from) < Walk.meters($1.coordinate, from) }
             ?? store.stop("6545")
-    }
-
-    private func squaredMeters(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> Double {
-        let dx = (a.longitude - b.longitude) * 84_300, dy = (a.latitude - b.latitude) * 111_132
-        return dx * dx + dy * dy
     }
 
     var body: some View {
@@ -80,8 +75,6 @@ struct HomeView: View {
 
     private func walkText(to stop: ShuttleStop) -> String {
         guard let me = userCoordinate else { return "Shuttle stop" }
-        // straight line × 1.25 street-grid detour at 1.3 m/s, same as the prototype
-        let meters = squaredMeters(stop.coordinate, me).squareRoot() * 1.25
-        return "Shuttle stop · \(Fmt.minutes(meters / 1.3)) walk"
+        return "Shuttle stop · \(Fmt.minutes(Walk.seconds(me, stop.coordinate))) walk"
     }
 }

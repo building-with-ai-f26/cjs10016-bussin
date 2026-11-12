@@ -33,6 +33,7 @@ final class ShuttleStore {
     func stop(_ id: String) -> ShuttleStop? { stopsById[id] }
 
     var engine: ETAEngine { ETAEngine(geometries: geometries, buses: trackedBuses) }
+    var planner: TripPlanner { TripPlanner(geometries: geometries, stops: stopsById, buses: trackedBuses) }
 
     func hasBuses(_ routeId: String) -> Bool { trackedBuses.contains { $0.bus.routeId == routeId } }
 
