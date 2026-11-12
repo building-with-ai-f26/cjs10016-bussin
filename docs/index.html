@@ -169,7 +169,7 @@
     <section id="live-demo">
       <h2>Product Showcase (Prototype / Live App / 2-Min Video)</h2>
       <p>
-        <strong>Current Status:</strong> Build 1: clickable home screen mockup. The native iOS app (SwiftUI and MapKit) comes next.<br />
+        <strong>Current Status:</strong> Build 2: the native iOS app runs against the live feed, with real arrival times and stop, route and bus screens. Trip planning is next.<br />
         <strong>Demo:</strong> <a href="prototype/">Try the interactive prototype</a>. Search for a destination, compare shuttle options, and tap any stop or bus. It works on your phone, too. The first design pass is the <a href="mockup/home.html">home screen mockup</a>.
       </p>
       <figure class="shot">
@@ -250,9 +250,9 @@
       <div class="log-entry">
         <h3>Build 2 · Smallest Local Version & PostHog (Due Nov 16)</h3>
         <ul>
-          <li><strong>What shipped:</strong> [Local working slice, PostHog verified on this page and the local app, PRD v2, and local setup in AGENTS.md]</li>
-          <li><strong>What broke / changed in PRD:</strong> [Fill in]</li>
-          <li><strong>Cost & time this week:</strong> $[0.00] · [0] hours</li>
+          <li><strong>What shipped:</strong> The first native iOS version of Bussin, running on the iPhone simulator against the real Passio feed. It shows every NYU shuttle moving on Apple Maps, works out live arrival times at each stop, and has the screens from the prototype: a slide-up panel with your nearest stop and its next departures, plus a screen for each stop, each route, and each bus. Tapping a bus lists every stop ahead with a clock time. 21 automated tests cover the feed parsing and the arrival math. PostHog is wired into the app and turns on once I add my project key; local setup is documented in AGENTS.md. Separately, a GitHub Action now logs how many riders are on every bus every 15 minutes, which is the start of a dataset for suggesting route changes to NYU.</li>
+          <li><strong>What broke / changed in PRD:</strong> Two bugs only showed up against live data. A Route B bus reported its location as New Hampshire in the middle of service, so the app now ignores any GPS reading more than 300 meters off its route. And arrival times swung wildly when a bus sat at a red light: one paused reading pushed every stop down the line out by up to nine minutes. Speed now averages over about two minutes of driving, and a test pins that behavior down. The PRD's roadmap grew: service alerts that cover holiday schedules, a Campus Safety report button, crowdsourced "ride mode," smarter arrival times, and "time to leave" notifications.</li>
+          <li><strong>Cost & time this week:</strong> $0.00 beyond my Claude subscription · [hours]</li>
         </ul>
       </div>
 

@@ -16,9 +16,9 @@ NYU students ride the shuttles for free, but Passio GO, the app NYU points them 
 
 - **Build 1 is done.** It includes PRD v1, a home screen mockup, and an interactive prototype that runs in the browser. You can search for a place like NYU Tandon, compare shuttle options against walking, and tap any stop, route or bus. Tapping a bus lists the stops it has left and when it will reach each one, which is what you want once you're on board. The routes and stops are real NYU data. The buses and arrival times are simulated.
 - **Biggest finding so far:** Passio GO's live feed for NYU answers without a login, so bus positions are reachable. What I don't know yet is whether Passio allows a third-party app to use that feed. That's the riskiest open question.
-- **Next, for Build 2 (due Nov 16):** the first SwiftUI version reading the real feed, plus PostHog analytics.
+- **Next:** trip planning (type a destination, compare each shuttle against walking), then the app goes on my own phone for daily rides.
 - **Logo:** four rounds of concepts are in [`logo/`](./logo/). Three finalists are left, all based on NYC signage, and I haven't picked one yet.
-- **The native app is underway.** [`ios/`](./ios/) holds the SwiftUI app: live buses, routes and stops on Apple Maps, polling Passio every 4 seconds, with the parsers tested against recorded feed data. A separate repo, [`bussin-data`](https://github.com/schwaigs-cj/bussin-data), logs riders-per-bus around the clock for the route-suggestions pitch to NYU.
+- **The native app is underway.** [`ios/`](./ios/) holds the SwiftUI app: live buses on Apple Maps, real arrival times worked out from each bus's position and speed, and the stop, route and bus screens from the prototype. 21 tests cover the feed parsing and arrival math. A separate repo, [`bussin-data`](https://github.com/schwaigs-cj/bussin-data), logs riders-per-bus around the clock for the route-suggestions pitch to NYU.
 
 ## Repository map
 
