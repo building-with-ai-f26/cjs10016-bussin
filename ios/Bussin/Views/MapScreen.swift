@@ -7,6 +7,7 @@ struct MapScreen: View {
     @State private var locationManager = CLLocationManager()
     @State private var path: [Place] = []
     @State private var sheetShown = true
+    @State private var demoBuses: [TrackedBus] = []     // debug only; always empty in release
     @State private var saved = SavedPlaces()
     @State private var walks = WalkTimes()
     @State private var tripSelection: TripPlanner.Option?
@@ -30,6 +31,7 @@ struct MapScreen: View {
     }
 
     var body: some View {
+        MapReader { proxy in
         Map(position: $camera) {
             // Paint order = z-order: routes, then stops, then buses, then you on top.
             ForEach(store.routes) { route in
@@ -55,9 +57,10 @@ struct MapScreen: View {
                 .annotationTitles(.hidden)
             }
 
-            ForEach(store.trackedBuses) { tracked in
+            ForEach(store.trackedBuses + demoBuses) { tracked in
                 let bus = tracked.bus
                 Annotation("Bus \(bus.number)", coordinate: bus.coordinate) {
+                    GlidingMarker(coordinate: bus.coordinate, proxy: proxy) {
                     Button { path = [.bus(bus.id)] } label: {
                         BusMarker(letter: store.route(for: bus.routeId)?.letter ?? "?",
                                   colorHex: store.route(for: bus.routeId)?.colorHex ?? "#8E8E93",
@@ -68,6 +71,7 @@ struct MapScreen: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Route \(store.route(for: bus.routeId)?.letter ?? "") bus \(bus.number)")
                     .opacity(busDimmed(bus) ? 0.2 : 1)
+                    }
                 }
                 .annotationTitles(.hidden)
             }
@@ -83,6 +87,7 @@ struct MapScreen: View {
             UserAnnotation()
         }
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
+        }
         .overlay(alignment: .top) {
             if case .stale(let message) = store.feedState {
                 Text(message)
@@ -114,6 +119,7 @@ struct MapScreen: View {
         .task { await store.run() }
         #if DEBUG
         .task { await openDebugLaunchPlace() }
+        .task { await runDemoBus() }
         #endif
         .onAppear {
             locationManager.requestWhenInUseAuthorization()
@@ -122,6 +128,21 @@ struct MapScreen: View {
     }
 
     #if DEBUG
+    /// `-demoBus YES` adds a pretend bus that hops 200 m north every 4 seconds, so the sliding
+    /// between updates can be checked without waiting for a real bus to drive past.
+    private func runDemoBus() async {
+        guard UserDefaults.standard.bool(forKey: "demoBus") else { return }
+        var lat = 40.733      // just north of Washington Square, clear of the panel
+        while !Task.isCancelled {
+            let bus = LiveBus(id: -1, number: "DEMO", routeId: "demo",
+                              coordinate: .init(latitude: lat, longitude: -74.0005), headingDegrees: 0,
+                              ridersAboard: nil, capacity: nil, isStale: false)
+            demoBuses = [TrackedBus(bus: bus, distanceAlong: 0, speed: 4)]
+            lat += 0.0018
+            try? await Task.sleep(for: .seconds(4))
+        }
+    }
+
     /// Test shortcut, like the prototype's ?view= links:
     /// `xcrun simctl launch booted com.schwaigs.bussin -place route:74769` (or stop:6545, bus:first).
     private func openDebugLaunchPlace() async {
