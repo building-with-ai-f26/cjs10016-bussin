@@ -9,6 +9,9 @@ enum Analytics {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "PostHogApiKey") as? String,
               key.hasPrefix("phc_") else { return }
         let config = PostHogConfig(apiKey: key, host: "https://us.i.posthog.com")
+        // Our own named events (route_viewed etc.) replace automatic screen tracking,
+        // which logs SwiftUI's internal class names like NavigationStackHostingController.
+        config.captureScreenViews = false
         #if DEBUG
         config.debug = true          // prints each event to the console in test builds
         config.flushAt = 1           // send immediately instead of batching
