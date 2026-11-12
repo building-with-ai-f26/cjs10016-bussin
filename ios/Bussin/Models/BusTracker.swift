@@ -14,6 +14,9 @@ struct TrackedBus: Identifiable {
 struct BusTracker {
     static let defaultSpeed = 4.0          // ~9 mph incl. stops, same as the prototype
     static let maxOffsetMeters = 300.0     // beyond this, the ping is a glitch
+    /// Speed is averaged over roughly this many seconds of driving, so a red light
+    /// or a stop dwell doesn't swing every downstream ETA (bug seen live Nov 11).
+    static let memorySeconds = 120.0
 
     private struct Memory { var distance: Double; var time: Date; var speed: Double }
     private var memory: [Int: Memory] = [:]
@@ -35,7 +38,8 @@ struct BusTracker {
                     if forward < 0 { forward += g.length }
                     let instant = forward / dt
                     if instant < 15 {       // a jump beyond 15 m/s is noise, not driving
-                        speed = max(1.5, min(9, 0.7 * m.speed + 0.3 * instant))
+                        let weight = dt / (dt + Self.memorySeconds)   // 4 s poll → ~3%
+                        speed = max(1.5, min(9, (1 - weight) * m.speed + weight * instant))
                     } else {
                         speed = m.speed
                     }

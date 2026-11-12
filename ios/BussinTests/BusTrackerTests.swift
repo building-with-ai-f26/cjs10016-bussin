@@ -41,8 +41,36 @@ final class BusTrackerTests: XCTestCase {
                            geometries: gs, at: Date(timeIntervalSince1970: 0))
         let t2 = tracker.update(buses: [mkBus(7, "74769", at: g.pointCoordinate(at: 120))],
                                 geometries: gs, at: Date(timeIntervalSince1970: 20))
-        // moved 120 m in 20 s = 6 m/s; blended 0.7*4 + 0.3*6 = 4.6
-        XCTAssertEqual(t2[0].speed, 4.6, accuracy: 0.3)
+        // moved 120 m in 20 s = 6 m/s, so the estimate nudges up from 4 — but gently
+        XCTAssertGreaterThan(t2[0].speed, 4.1)
+        XCTAssertLessThan(t2[0].speed, 4.6)
+    }
+
+    /// Bug seen live Nov 11: a bus paused at a red light for one 4-second poll and every
+    /// downstream ETA jumped ~40% (22 → 31 min). One stopped ping must barely move the estimate.
+    func testRedLightDoesNotWreckTheEstimate() throws {
+        let gs = try geometries()
+        let g = try XCTUnwrap(gs["74769"])
+        var tracker = BusTracker()
+        let here = g.pointCoordinate(at: 500)
+        _ = tracker.update(buses: [mkBus(3, "74769", at: here)], geometries: gs, at: Date(timeIntervalSince1970: 0))
+        let stopped = tracker.update(buses: [mkBus(3, "74769", at: here)], geometries: gs, at: Date(timeIntervalSince1970: 4))
+        XCTAssertGreaterThan(stopped[0].speed, 3.8, "one paused poll should cost seconds, not minutes")
+    }
+
+    /// A bus that's truly crawling for minutes should still be believed.
+    func testSustainedSlowdownIsLearned() throws {
+        let gs = try geometries()
+        let g = try XCTUnwrap(gs["74769"])
+        var tracker = BusTracker()
+        var t = 0.0, d = 0.0
+        var last: [TrackedBus] = []
+        for _ in 0..<60 {                                    // 4 minutes at 1.5 m/s
+            last = tracker.update(buses: [mkBus(4, "74769", at: g.pointCoordinate(at: d))],
+                                  geometries: gs, at: Date(timeIntervalSince1970: t))
+            t += 4; d += 6
+        }
+        XCTAssertLessThan(last[0].speed, 2.6, "four minutes of crawling should lower the estimate")
     }
 
     func testOffCorridorBusIsDropped() throws {
