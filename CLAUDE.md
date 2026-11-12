@@ -44,7 +44,7 @@ This file holds the working agreements and current state that used to live only 
 1. **Build 2 (due Nov 16).** Chris needs to screenshot the `$pageview` and `clicked_try_product` events in PostHog and fill in the hours in the Build 2 log in `docs/index.html`.
 2. **Finish Phase 3.** Chris rides with the app for a day, checks a daytime trip where a shuttle beats walking, then merge `ios-phase-3`.
    - A bus waiting at your boarding stop: if you're within a minute's walk the planner boards it; from further away it quotes the next sure bus and adds a "may leave without you" note. The app has no timetable, so it can't say when a waiting bus departs. Not yet seen live in the simulator, only in tests.
-3. **Phase 4: share-ready.** Get the app ready for TestFlight. The app icon is blocked until Chris picks a logo: Mosaic, Station sign, or Bus LED.
+3. **Phase 4: share-ready.** Get the app ready for TestFlight. The app uses the Station sign icon for now (Chris's pick on Nov 12, may change). `swift tools/make-app-icon.swift` redraws it. The final icon still needs rebuilding as layers in Apple's Icon Composer.
 4. **Phase 5: roadmap.**
    - Service alerts, including holiday schedules.
    - A Campus Safety report button.
@@ -55,7 +55,7 @@ This file holds the working agreements and current state that used to live only 
    - The ridership pitch to NYU.
 
 **Chris's own to-dos:**
-- Pick the logo.
+- Confirm the final logo. Station sign is in use for now; Mosaic and Bus LED are still options.
 - Email NYU Transportation about permission to use the Passio feed. This is a standing risk.
 
 ## Quirks worth knowing

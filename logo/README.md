@@ -11,6 +11,7 @@ Work in progress on the Bussin logo and app icon. Each file is a standalone page
 
 ## Where things stand
 
+- **In use for now:** the Station sign icon is the app icon as of Nov 12, 2026. `tools/make-app-icon.swift` draws it. This may change.
 - **Still in the running for the main logo:** Mosaic, Station sign, and Bus display.
 - **Station lamp:** dropped as the main logo. Its icon will be an optional retro app icon people can pick in Settings (it's in the PRD's Future Features).
 - **Open question:** which of the three becomes the main logo. One option on the table is pairing them: the Bus display "B" as the app icon and the Station sign as the wordmark.
