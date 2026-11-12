@@ -28,10 +28,3 @@ struct SheetHost: View {
         .interactiveDismissDisabled()
     }
 }
-
-// Temporary stand-in so the build stays green; replaced in the next task.
-struct BusView: View {
-    let store: ShuttleStore
-    let busId: Int
-    var body: some View { Text("Bus \(busId)") }
-}

@@ -36,11 +36,17 @@ struct MapScreen: View {
 
             ForEach(store.stops) { stop in
                 Annotation(stop.name, coordinate: stop.coordinate) {
-                    Circle()
-                        .fill(.white)
-                        .stroke(Color(.systemGray), lineWidth: focus == .stop(stop.id) ? 4 : 2)
-                        .frame(width: focus == .stop(stop.id) ? 16 : 10, height: focus == .stop(stop.id) ? 16 : 10)
-                        .opacity(stop.routeIds.contains { !isDimmed(route: $0) } ? 1 : 0.25)
+                    Button { path = [.stop(stop.id)] } label: {
+                        Circle()
+                            .fill(.white)
+                            .stroke(Color(.systemGray), lineWidth: focus == .stop(stop.id) ? 4 : 2)
+                            .frame(width: focus == .stop(stop.id) ? 16 : 10, height: focus == .stop(stop.id) ? 16 : 10)
+                            .frame(width: 32, height: 32)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(stop.name)
+                    .opacity(stop.routeIds.contains { !isDimmed(route: $0) } ? 1 : 0.25)
                 }
                 .annotationTitles(.hidden)
             }
@@ -48,11 +54,16 @@ struct MapScreen: View {
             ForEach(store.trackedBuses) { tracked in
                 let bus = tracked.bus
                 Annotation("Bus \(bus.number)", coordinate: bus.coordinate) {
-                    BusMarker(letter: store.route(for: bus.routeId)?.letter ?? "?",
-                              colorHex: store.route(for: bus.routeId)?.colorHex ?? "#8E8E93",
-                              heading: bus.headingDegrees,
-                              isStale: bus.isStale)
-                        .opacity(isDimmed(route: bus.routeId) ? 0.2 : 1)
+                    Button { path = [.bus(bus.id)] } label: {
+                        BusMarker(letter: store.route(for: bus.routeId)?.letter ?? "?",
+                                  colorHex: store.route(for: bus.routeId)?.colorHex ?? "#8E8E93",
+                                  heading: bus.headingDegrees,
+                                  isStale: bus.isStale,
+                                  isSelected: focus == .bus(bus.id))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Route \(store.route(for: bus.routeId)?.letter ?? "") bus \(bus.number)")
+                    .opacity(busDimmed(bus) ? 0.2 : 1)
                 }
                 .annotationTitles(.hidden)
             }
@@ -74,6 +85,11 @@ struct MapScreen: View {
         }
         .onChange(of: path) { _, _ in
             withAnimation(.easeInOut(duration: 0.5)) { camera = cameraForFocus() }
+        }
+        .onChange(of: followedBusPosition) { _, _ in
+            // Follow the open bus as it moves, like the prototype's follow mode.
+            guard case .bus = focus else { return }
+            withAnimation(.easeInOut(duration: 1)) { camera = cameraForFocus() }
         }
         .task { await store.run() }
         #if DEBUG
@@ -103,6 +119,18 @@ struct MapScreen: View {
         }
     }
     #endif
+
+    /// Changes whenever the open bus reports a new position.
+    private var followedBusPosition: String {
+        guard case .bus(let id) = focus,
+              let b = store.trackedBuses.first(where: { $0.id == id }) else { return "" }
+        return "\(b.bus.coordinate.latitude),\(b.bus.coordinate.longitude)"
+    }
+
+    private func busDimmed(_ bus: LiveBus) -> Bool {
+        if case .bus(let id) = focus { return bus.id != id }   // a single bus: only it stays bright
+        return isDimmed(route: bus.routeId)
+    }
 
     private func isDimmed(route id: String) -> Bool {
         guard let focused = focusedRouteIds else { return false }
