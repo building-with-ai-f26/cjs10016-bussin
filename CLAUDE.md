@@ -26,6 +26,13 @@ This file holds the working agreements and current state that used to live only 
   - `ETAEngine` turns that into arrival times.
   - The slide-up sheet has Home, Stop, Route, and Bus screens. The map focuses on whatever is open and follows the open bus.
   - 21 XCTests cover all of this.
+- **Phase 3 is built on branch `ios-phase-3`, not yet merged.** It added trip planning:
+  - Search any address or place through Apple Maps (`PlaceSearch`).
+  - `TripPlanner` compares each running shuttle against walking. It shortlists stops with straight-line estimates, then re-times them with real Apple Maps walking routes from `WalkTimes` (at most 9 requests per trip, cached).
+  - Favorites and the two latest searches sit on Home (`SavedPlaces`, stored on the phone).
+  - Analytics send `trip_planned` and `no_good_option`, never the searched address.
+  - 37 XCTests pass.
+  - Still open: installing on Chris's iPhone. Chris adds an Apple ID in Xcode and plugs the phone in; the team ID then goes in `ios/Secrets.xcconfig` as `DEVELOPMENT_TEAM`.
 - **PostHog is live.**
   - iOS reads its key from the gitignored `ios/Secrets.xcconfig`, which only exists on Chris's laptop. Analytics is off in any build without it. The app sends named events: `app_opened`, `route_viewed`, `stop_viewed`, and `bus_viewed`. Automatic screen tracking is off.
   - The product page carries the PostHog web snippet. Chris's Chrome has AdBlock, which blocks PostHog, so Chris tests the page with AdBlock paused.
@@ -35,11 +42,8 @@ This file holds the working agreements and current state that used to live only 
 ## What's next
 
 1. **Build 2 (due Nov 16).** Chris needs to screenshot the `$pageview` and `clicked_try_product` events in PostHog and fill in the hours in the Build 2 log in `docs/index.html`.
-2. **Phase 3: trip planning.** Write the plan first.
-   - Port the prototype's `plan()` function from `docs/prototype/`, which compares taking the shuttle against walking.
-   - Add search over NYU destinations.
-   - Install the app on Chris's iPhone.
-   - Use Opus or Fable for the planner math and Sonnet for the search screen.
+2. **Finish Phase 3.** Install on Chris's iPhone, check a daytime trip where a shuttle beats walking, then merge `ios-phase-3`.
+   - Known gap: a bus parked at the stop you'd board counts as missed, so the planner quotes the next lap.
 3. **Phase 4: share-ready.** Get the app ready for TestFlight. The app icon is blocked until Chris picks a logo: Mosaic, Station sign, or Bus LED.
 4. **Phase 5: roadmap.**
    - Service alerts, including holiday schedules.
@@ -60,7 +64,7 @@ This file holds the working agreements and current state that used to live only 
 - **Simulator.**
   - In Xcode 27 the Simulator app is DeviceHub.app, inside `/Applications/Xcode.app/Contents/Applications/`.
   - `simctl privacy grant location` doesn't suppress the location prompt, so someone has to tap Allow once.
-  - To open a specific screen for a screenshot: `xcrun simctl launch --terminate-running-process "iPhone 17" com.schwaigs.bussin -place route:74769` (or `stop:6545` or `bus:first`).
+  - To open a specific screen for a screenshot: `xcrun simctl launch --terminate-running-process "iPhone 17" com.schwaigs.bussin -place route:74769` (or `stop:6545` or `bus:first`, `search`, or `trip:40.6943,-73.9865`).
 - **Passio feed.**
   - PHP returns `[]` where it means an empty `{}`.
   - Latitude and longitude arrive as strings.

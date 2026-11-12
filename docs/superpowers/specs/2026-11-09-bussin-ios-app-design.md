@@ -26,13 +26,13 @@ Project lives at `ios/Bussin.xcodeproj` with sources in `ios/Bussin/`. Bundle id
 Two pure-Swift modules, no UI imports, fully unit-tested:
 
 - **ETAEngine** — ports the prototype's distance-along-route model to real positions: snap each bus's GPS point onto its route polyline, compute distance along the route, and an ETA to any stop is remaining distance divided by speed. Speed starts at the fixed ~4 m/s average and corrects itself from how far each bus actually moved between pings. Loop routes wrap around; the engine handles the modulo.
-- **TripPlanner** — direct port of the prototype's `plan()`: for each running route, the best board/alight stop pair, with walking legs estimated as straight-line distance × 1.25 detour at 1.3 m/s. Compared against walking the whole way. Real MapKit walking directions are a later polish for the selected option only.
+- **TripPlanner** — direct port of the prototype's `plan()`: for each running route, the best board/alight stop pair, with walking legs first estimated as straight-line distance × 1.25 detour at 1.3 m/s to shortlist stops, then re-timed with real Apple Maps walking routes (`MKDirections`, at most 9 requests per trip, cached). Compared against the real walk the whole way. See `docs/superpowers/plans/2026-11-11-ios-phase-3-trip-planning.md`.
 
 ## Screens
 
 Apple Maps base with route polylines, stop dots, live bus markers, and the user's location. A bottom sheet using native `presentationDetents` (three heights, map touchable behind it — the Apple Maps pattern). Inside the sheet, a navigation stack with the screens the prototype already proved out: Home (nearest stop departures, favorites, all routes), Search → Trip plan, Stop detail, Route detail, and Bus detail (upcoming stops with times, follow-the-bus).
 
-Search runs against the curated NYU destinations list first; `MKLocalSearch` for arbitrary places is a later add.
+Search uses Apple Maps (`MKLocalSearchCompleter`), so a rider can type any address, building, or restaurant; results favor the area the shuttles cover. Chris chose this over a curated NYU list on Nov 11. Favorites and the two latest searches sit on Home.
 
 ## Ridership data (for the NYU route pitch)
 

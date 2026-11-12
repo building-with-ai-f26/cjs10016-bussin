@@ -1,3 +1,5 @@
 // Default build settings. Secrets.xcconfig (gitignored) overrides them when present.
 POSTHOG_API_KEY =
+// Apple team ID for installing on a real iPhone. Set it in Secrets.xcconfig.
+DEVELOPMENT_TEAM =
 #include? "Secrets.xcconfig"
