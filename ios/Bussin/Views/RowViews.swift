@@ -9,6 +9,18 @@ enum Place: Hashable {
     case trip(Destination)
 }
 
+/// Shared row measurements, so every row's icon sits in the same column and every label
+/// starts at the same left edge, whatever the icon is.
+enum RowMetrics {
+    static let iconColumn: CGFloat = 40     // the bus tile is 40 wide; smaller icons centre in it
+    static let iconGap: CGFloat = 12
+    static let minHeight: CGFloat = 44
+    static let sectionGap: CGFloat = 12     // List adds its own header padding on top of this
+    static let topGap: CGFloat = 30         // drag handle to the first card; reads the same as header-to-card
+    /// Left edge shared by every row label; text-only rows indent to it.
+    static var labelIndent: CGFloat { iconColumn + iconGap }
+}
+
 /// Rounded square in the route's feed color with its letter (DESIGN.md: Route Badge).
 struct RouteBadge: View {
     let letter: String
@@ -53,6 +65,7 @@ struct DepartureRow: View {
     var body: some View {
         HStack(spacing: 12) {
             RouteBadge(letter: route.letter, colorHex: route.colorHex)
+                .frame(width: RowMetrics.iconColumn)
             Text(route.name).font(.headline)
             Spacer()
             VStack(alignment: .trailing, spacing: 1) {
@@ -64,6 +77,6 @@ struct DepartureRow: View {
                 }
             }
         }
-        .padding(.vertical, 4)
+        .frame(minHeight: RowMetrics.minHeight)
     }
 }

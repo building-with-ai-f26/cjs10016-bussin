@@ -24,7 +24,14 @@ struct HomeView: View {
         List {
             Section {
                 NavigationLink(value: Place.search) {
-                    Label("Where to?", systemImage: "magnifyingglass").foregroundStyle(.secondary)
+                    HStack(spacing: RowMetrics.iconGap) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.title3)
+                            .frame(width: RowMetrics.iconColumn)
+                        Text("Where to?")
+                    }
+                    .foregroundStyle(.secondary)
+                    .frame(minHeight: RowMetrics.minHeight)
                 }
             }
             if !saved.favorites.isEmpty {
@@ -48,13 +55,14 @@ struct HomeView: View {
                 ForEach(store.routes) { route in
                     let count = store.trackedBuses.filter { $0.bus.routeId == route.id }.count
                     NavigationLink(value: Place.route(route.id)) {
-                        HStack(spacing: 12) {
+                        HStack(spacing: RowMetrics.iconGap) {
                             RouteBadge(letter: route.letter, colorHex: route.colorHex)
                                 .opacity(count > 0 ? 1 : 0.45)
+                                .frame(width: RowMetrics.iconColumn)
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(route.name)
                                 Text(count > 0 ? "\(count) \(count == 1 ? "bus" : "buses") running" : "Not running now")
-                                    .font(.footnote)
+                                    .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
                         }
@@ -65,14 +73,15 @@ struct HomeView: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         // No title bar on Home: the search row is the first thing in the panel.
-        .contentMargins(.top, 12, for: .scrollContent)
+        .listSectionSpacing(RowMetrics.sectionGap)
+        .contentMargins(.top, RowMetrics.topGap, for: .scrollContent)
         .toolbar(.hidden, for: .navigationBar)
     }
 
     private func stopSection(_ title: String, _ stop: ShuttleStop) -> some View {
         Section(title) {
             NavigationLink(value: Place.stop(stop.id)) {
-                HStack(spacing: 12) {
+                HStack(spacing: RowMetrics.iconGap) {
                     Image(systemName: "bus.fill")
                         .font(.title3)
                         .foregroundStyle(.white)
@@ -88,7 +97,11 @@ struct HomeView: View {
             }
             let deps = store.engine.departures(stopId: stop.id, routeIds: store.runningRouteIds(at: stop))
             if deps.isEmpty {
-                Text("No buses running here right now.").foregroundStyle(.secondary)
+                Text("No buses running here right now.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, RowMetrics.labelIndent)
+                    .frame(minHeight: RowMetrics.minHeight)
             }
             ForEach(deps) { dep in
                 if let route = store.route(for: dep.routeId) {
@@ -102,13 +115,14 @@ struct HomeView: View {
 
     private func placeRow(_ d: Destination, icon: String, tint: Color) -> some View {
         NavigationLink(value: Place.trip(d)) {
-            HStack(spacing: 12) {
-                Image(systemName: icon).foregroundStyle(tint).frame(width: 30)
+            HStack(spacing: RowMetrics.iconGap) {
+                Image(systemName: icon).font(.title3).foregroundStyle(tint).frame(width: RowMetrics.iconColumn)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(d.name)
-                    Text(summary(for: d)).font(.footnote).foregroundStyle(.secondary)
+                    Text(summary(for: d)).font(.subheadline).foregroundStyle(.secondary)
                 }
             }
+            .frame(minHeight: RowMetrics.minHeight)
         }
     }
 
