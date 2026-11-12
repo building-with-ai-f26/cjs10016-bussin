@@ -32,7 +32,7 @@ This file holds the working agreements and current state that used to live only 
   - Favorites and the two latest searches sit on Home (`SavedPlaces`, stored on the phone).
   - Analytics send `trip_planned` and `no_good_option`, never the searched address.
   - 39 XCTests pass.
-  - Still open: installing on Chris's iPhone. Chris adds an Apple ID in Xcode and plugs the phone in; the team ID then goes in `ios/Secrets.xcconfig` as `DEVELOPMENT_TEAM`.
+  - Installed on Chris's iPhone on Nov 11 with a free personal team, so it stops opening after 7 days until reinstalled. The team ID lives in `ios/Secrets.xcconfig` as `DEVELOPMENT_TEAM`. To reinstall: build with `-destination 'id=<phone UDID>' -allowProvisioningUpdates`, then `xcrun devicectl device install app`.
 - **PostHog is live.**
   - iOS reads its key from the gitignored `ios/Secrets.xcconfig`, which only exists on Chris's laptop. Analytics is off in any build without it. The app sends named events: `app_opened`, `route_viewed`, `stop_viewed`, and `bus_viewed`. Automatic screen tracking is off.
   - The product page carries the PostHog web snippet. Chris's Chrome has AdBlock, which blocks PostHog, so Chris tests the page with AdBlock paused.
@@ -42,7 +42,7 @@ This file holds the working agreements and current state that used to live only 
 ## What's next
 
 1. **Build 2 (due Nov 16).** Chris needs to screenshot the `$pageview` and `clicked_try_product` events in PostHog and fill in the hours in the Build 2 log in `docs/index.html`.
-2. **Finish Phase 3.** Install on Chris's iPhone, check a daytime trip where a shuttle beats walking, then merge `ios-phase-3`.
+2. **Finish Phase 3.** Chris rides with the app for a day, checks a daytime trip where a shuttle beats walking, then merge `ios-phase-3`.
    - A bus waiting at your boarding stop: if you're within a minute's walk the planner boards it; from further away it quotes the next sure bus and adds a "may leave without you" note. The app has no timetable, so it can't say when a waiting bus departs. Not yet seen live in the simulator, only in tests.
 3. **Phase 4: share-ready.** Get the app ready for TestFlight. The app icon is blocked until Chris picks a logo: Mosaic, Station sign, or Bus LED.
 4. **Phase 5: roadmap.**
