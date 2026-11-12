@@ -32,7 +32,7 @@ This file holds the working agreements and current state that used to live only 
   - Favorites and the two latest searches sit on Home (`SavedPlaces`, stored on the phone).
   - Analytics send `trip_planned` and `no_good_option`, never the searched address.
   - 39 XCTests pass.
-  - Installed on Chris's iPhone on Nov 11 with a free personal team, so it stops opening after 7 days until reinstalled. The team ID lives in `ios/Secrets.xcconfig` as `DEVELOPMENT_TEAM`. To reinstall: build with `-destination 'id=<phone UDID>' -allowProvisioningUpdates`, then `xcrun devicectl device install app`.
+  - Installed on Chris's iPhone on Nov 11 signed with Chris's paid Apple Developer team. The signing profile runs until Nov 12, 2027. The team ID lives in `ios/Secrets.xcconfig` as `DEVELOPMENT_TEAM`. To reinstall: build with `-destination 'id=<phone UDID>' -allowProvisioningUpdates`, then `xcrun devicectl device install app`.
 - **PostHog is live.**
   - iOS reads its key from the gitignored `ios/Secrets.xcconfig`, which only exists on Chris's laptop. Analytics is off in any build without it. The app sends named events: `app_opened`, `route_viewed`, `stop_viewed`, and `bus_viewed`. Automatic screen tracking is off.
   - The product page carries the PostHog web snippet. Chris's Chrome has AdBlock, which blocks PostHog, so Chris tests the page with AdBlock paused.
@@ -55,7 +55,6 @@ This file holds the working agreements and current state that used to live only 
    - The ridership pitch to NYU.
 
 **Chris's own to-dos:**
-- Enroll in the Apple Developer program.
 - Pick the logo.
 - Email NYU Transportation about permission to use the Passio feed. This is a standing risk.
 
