@@ -74,7 +74,15 @@ struct HomeView: View {
         .scrollContentBackground(.hidden)
         // No title bar on Home: the search row is the first thing in the panel.
         .listSectionSpacing(RowMetrics.sectionGap)
-        .contentMargins(.top, RowMetrics.topGap, for: .scrollContent)
+        .contentMargins(.top, 0, for: .scrollContent)
+        // Home has no title bar, so without this the only place to grab the panel is the thin
+        // handle. This strip sits above the list and doesn't scroll, so dragging it resizes the panel.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            Color.clear
+                .frame(height: RowMetrics.grabStrip)
+                .contentShape(Rectangle())
+                .accessibilityHidden(true)
+        }
         .toolbar(.hidden, for: .navigationBar)
     }
 

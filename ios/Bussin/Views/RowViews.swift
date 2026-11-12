@@ -16,7 +16,9 @@ enum RowMetrics {
     static let iconGap: CGFloat = 12
     static let minHeight: CGFloat = 44
     static let sectionGap: CGFloat = 12     // List adds its own header padding on top of this
-    static let topGap: CGFloat = 30         // drag handle to the first card; reads the same as header-to-card
+    /// Height of the strip at the top of Home that you grab to resize the panel. It doesn't
+    /// scroll, so a drag anywhere in it moves the panel. 44 pt is Apple's minimum touch target.
+    static let grabStrip: CGFloat = 44
     /// Left edge shared by every row label; text-only rows indent to it.
     static var labelIndent: CGFloat { iconColumn + iconGap }
 }
