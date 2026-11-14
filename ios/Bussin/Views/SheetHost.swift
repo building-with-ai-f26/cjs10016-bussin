@@ -6,6 +6,7 @@ struct SheetHost: View {
     let store: ShuttleStore
     @Binding var path: [Place]          // the map reads path.last to know what to focus
     let userCoordinate: CLLocationCoordinate2D?
+    let locationDenied: Bool
     let saved: SavedPlaces
     let walks: WalkTimes
     @Binding var tripSelection: TripPlanner.Option?
@@ -16,7 +17,7 @@ struct SheetHost: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            HomeView(store: store, saved: saved, userCoordinate: userCoordinate)
+            HomeView(store: store, saved: saved, userCoordinate: userCoordinate, locationDenied: locationDenied)
                 .navigationDestination(for: Place.self) { place in
                     switch place {
                     case .stop(let id): StopView(store: store, stopId: id)

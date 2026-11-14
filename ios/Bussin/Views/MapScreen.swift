@@ -4,7 +4,7 @@ import CoreLocation
 
 struct MapScreen: View {
     @State private var store = ShuttleStore()
-    @State private var locationManager = CLLocationManager()
+    @State private var location = LocationAccess()
     @State private var path: [Place] = []
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     @State private var sheetShown = false       // opens once the welcome card is done
@@ -99,7 +99,8 @@ struct MapScreen: View {
             }
         }
         .sheet(isPresented: $sheetShown) {
-            SheetHost(store: store, path: $path, userCoordinate: locationManager.location?.coordinate,
+            SheetHost(store: store, path: $path, userCoordinate: location.coordinate,
+                      locationDenied: location.isDenied,
                       saved: saved, walks: walks, tripSelection: $tripSelection)
         }
         .onChange(of: path) { old, new in
@@ -140,10 +141,7 @@ struct MapScreen: View {
         }
     }
 
-    private func startLocation() {
-        locationManager.requestWhenInUseAuthorization()
-        locationManager.startUpdatingLocation()
-    }
+    private func startLocation() { location.start() }
 
     #if DEBUG
     /// `-demoBus YES` adds a pretend bus that hops 200 m north every 4 seconds, so the sliding
@@ -185,7 +183,7 @@ struct MapScreen: View {
     }
     #endif
 
-    private var tripOrigin: CLLocationCoordinate2D { locationManager.location?.coordinate ?? TripView.hub }
+    private var tripOrigin: CLLocationCoordinate2D { location.coordinate ?? TripView.hub }
 
     /// Dotted walking lines: to the stop and from the stop, or straight there if walking.
     /// Each follows real streets once Apple Maps has answered, and is a straight line until then.

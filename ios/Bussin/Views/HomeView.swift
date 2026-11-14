@@ -5,6 +5,8 @@ struct HomeView: View {
     let store: ShuttleStore
     let saved: SavedPlaces
     let userCoordinate: CLLocationCoordinate2D?
+    let locationDenied: Bool
+    @Environment(\.openURL) private var openURL
 
     private var from: CLLocationCoordinate2D { userCoordinate ?? TripView.hub }
 
@@ -34,6 +36,18 @@ struct HomeView: View {
                     .frame(minHeight: RowMetrics.minHeight)
                 }
             }
+            if locationDenied {
+                Section {
+                    noticeRow(icon: "location.slash.fill", title: "Location is off",
+                              detail: "Turn it on to see your nearest stop and walking times.")
+                    Button("Open Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                    }
+                }
+            }
+            if let status = ServiceStatus.notice(feed: store.feedState, busCount: store.trackedBuses.count) {
+                Section { noticeRow(icon: status.icon, title: status.title, detail: status.detail) }
+            }
             if !saved.favorites.isEmpty {
                 Section("Favorites") {
                     ForEach(saved.favorites) { placeRow($0, icon: "star.fill", tint: .yellow) }
@@ -45,7 +59,7 @@ struct HomeView: View {
                 }
             }
             if let stop = nearestStop {
-                stopSection("Nearest stop", stop)
+                stopSection(locationDenied ? "Nearest stop to 715 Broadway" : "Nearest stop", stop)
                 if store.runningRouteIds(at: stop).isEmpty, let running = nearestRunningStop {
                     stopSection("Nearest stop with a bus running", running)
                 }
@@ -84,6 +98,18 @@ struct HomeView: View {
                 .accessibilityHidden(true)
         }
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private func noticeRow(icon: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: RowMetrics.iconGap) {
+            Image(systemName: icon).font(.title3).foregroundStyle(.secondary).frame(width: RowMetrics.iconColumn)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.headline)
+                Text(detail).font(.subheadline).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .combine)
     }
 
     private func stopSection(_ title: String, _ stop: ShuttleStop) -> some View {
