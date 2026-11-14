@@ -24,7 +24,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
-        MARKETING_VERSION: 0.1.0
+        MARKETING_VERSION: 1.0.0
         CURRENT_PROJECT_VERSION: 1
         TARGETED_DEVICE_FAMILY: 1
         SWIFT_VERSION: "5.0"
@@ -32,6 +32,10 @@ targets:
       path: Bussin/Info.plist
       properties:
         UILaunchScreen: {}
+        CFBundleDisplayName: Bussin
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        ITSAppUsesNonExemptEncryption: false
         NSLocationWhenInUseUsageDescription: Bussin uses your location to find your nearest shuttle stop and time your walk. It stays on your phone.
         PostHogApiKey: $(POSTHOG_API_KEY)
   BussinTests:
