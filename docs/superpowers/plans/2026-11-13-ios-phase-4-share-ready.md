@@ -288,7 +288,7 @@ The page says, in plain words:
 ### Task 6: Upload to TestFlight
 
 - [ ] **Chris, in App Store Connect** (appstoreconnect.apple.com → Apps → +):
-  1. New App: platform iOS, name "Bussin" (if taken, "Bussin: NYU Shuttles"), language English (U.S.), bundle ID `com.schwaigs.bussin`, SKU `bussin`.
+  1. New App: platform iOS, name "Bussin" (if taken, try "Bussin'" first, Chris's idea, then "Bussin: NYU Shuttles"), language English (U.S.), bundle ID `com.schwaigs.bussin`, SKU `bussin`.
   2. Tell Claude when it exists.
 - [ ] **Claude:** archive and upload using the Apple account already in Xcode:
 
@@ -314,5 +314,5 @@ cd ios && xcodebuild -project Bussin.xcodeproj -scheme Bussin -configuration Rel
 ## What could go wrong
 
 - **Apple rejects the beta.** Likeliest reasons: the app looking like an official NYU or MTA product, or the privacy URL missing. The "not an official NYU app" lines and the privacy page are there for this.
-- **The name "Bussin" is taken** on the App Store. The fallback name is in Task 6. The name on the phone's home screen stays "Bussin" either way.
+- **The name "Bussin" is taken** on the App Store. Fallbacks, in order: "Bussin'" and "Bussin: NYU Shuttles". Apple may count the apostrophe version as too close to a taken name; the app record is where we find out. The name on the phone's home screen stays "Bussin" either way.
 - **The feed gets blocked** after the link is public. The app then shows the "Can't reach live bus data" notice from Task 2 instead of an empty map.

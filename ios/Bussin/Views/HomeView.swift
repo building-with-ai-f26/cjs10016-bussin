@@ -83,6 +83,15 @@ struct HomeView: View {
                     }
                 }
             }
+
+            Section {
+                EmptyView()
+            } footer: {
+                Text("Not an official NYU app · [Privacy](https://building-with-ai-f26.github.io/cjs10016-bussin/privacy.html)")
+                    .font(.footnote)
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
+            }
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)

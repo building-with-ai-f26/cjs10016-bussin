@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bussin privacy</title>
+  <style>
+    :root {
+      --bg: #fafafa; --card: #ffffff; --text: #111827; --muted: #4b5563;
+      --border: #e5e7eb; --accent: #1d63dc;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #111113; --card: #1c1c1e; --text: #f2f2f7; --muted: #aeaeb2; --border: #2c2c2e; --accent: #6ea8ff; }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text); line-height: 1.6;
+      font-family: -apple-system, BlinkMacSystemFont, "DM Sans", "Segoe UI", Roboto, sans-serif;
+    }
+    main { max-width: 680px; margin: 0 auto; padding: 48px 24px 80px; }
+    h1 { font-size: 32px; line-height: 1.2; margin: 0 0 8px; }
+    h2 { font-size: 20px; margin: 36px 0 8px; }
+    p, li { color: var(--muted); }
+    p { margin: 0 0 12px; }
+    ul { padding-left: 20px; margin: 0 0 12px; }
+    li { margin-bottom: 6px; }
+    strong { color: var(--text); }
+    a { color: var(--accent); }
+    .lede { font-size: 18px; color: var(--text); }
+    .updated { font-size: 14px; }
+    .contact { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+    :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Bussin privacy</h1>
+  <p class="lede">Bussin shows NYU's shuttles live. It has no accounts, and it never asks for your name or email.</p>
+  <p class="updated">Last updated November 13, 2026</p>
+
+  <h2>Your location</h2>
+  <p>Bussin uses your location to find the stop nearest you and to time your walk to it. Your phone works that out on the phone. When you search for a place or plan a trip, the places involved go to Apple Maps so it can send back results and walking routes. Bussin's maker never receives or stores your location.</p>
+  <p>You can say no. Bussin still works: it shows every route and bus, and starts from 715 Broadway instead of from you.</p>
+
+  <h2>What gets counted</h2>
+  <p>Bussin sends simple usage counts to PostHog, an analytics service, so its maker can see which parts of the app people use. That includes:</p>
+  <ul>
+    <li>that the app was opened, and whether you allowed location</li>
+    <li>which routes, stops, and buses were viewed</li>
+    <li>when you search, open a place, or star one</li>
+    <li>for a planned trip, which route and which two stops it used</li>
+  </ul>
+  <p><strong>It never includes</strong> the address or place you searched for, your coordinates, or anything that says who you are. The counts are tied to a random ID the app makes for itself, not to you.</p>
+
+  <h2>What stays on your phone</h2>
+  <p>Your favorite places and recent searches are saved on your phone only. Deleting the app deletes them.</p>
+
+  <h2>Where the buses come from</h2>
+  <p>Bus positions come from NYU's public Passio GO feed. Bussin is a student project. It is not an official NYU app, and NYU and Passio do not run or endorse it.</p>
+
+  <h2>Questions</h2>
+  <p class="contact">Email <a href="mailto:CONTACT_EMAIL">CONTACT_EMAIL</a> and a person will answer.</p>
+</main>
+</body>
+</html>
