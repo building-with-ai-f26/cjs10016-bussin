@@ -32,7 +32,7 @@ targets:
       path: Bussin/Info.plist
       properties:
         UILaunchScreen: {}
-        NSLocationWhenInUseUsageDescription: Bussin uses your location to show how far you are from each shuttle stop.
+        NSLocationWhenInUseUsageDescription: Bussin uses your location to find your nearest shuttle stop and time your walk. It stays on your phone.
         PostHogApiKey: $(POSTHOG_API_KEY)
   BussinTests:
     type: bundle.unit-test

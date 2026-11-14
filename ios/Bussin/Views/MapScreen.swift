@@ -6,7 +6,8 @@ struct MapScreen: View {
     @State private var store = ShuttleStore()
     @State private var locationManager = CLLocationManager()
     @State private var path: [Place] = []
-    @State private var sheetShown = true
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
+    @State private var sheetShown = false       // opens once the welcome card is done
     @State private var demoBuses: [TrackedBus] = []     // debug only; always empty in release
     @State private var saved = SavedPlaces()
     @State private var walks = WalkTimes()
@@ -121,10 +122,27 @@ struct MapScreen: View {
         .task { await openDebugLaunchPlace() }
         .task { await runDemoBus() }
         #endif
-        .onAppear {
-            locationManager.requestWhenInUseAuthorization()
-            locationManager.startUpdatingLocation()
+        .fullScreenCover(isPresented: .constant(!hasSeenWelcome)) {
+            WelcomeView {
+                Analytics.capture("onboarding_completed")
+                hasSeenWelcome = true
+                startLocation()
+                sheetShown = true
+            }
         }
+        .onAppear {
+            #if DEBUG
+            if UserDefaults.standard.bool(forKey: "resetWelcome") { hasSeenWelcome = false; return }
+            #endif
+            guard hasSeenWelcome else { return }
+            startLocation()
+            sheetShown = true
+        }
+    }
+
+    private func startLocation() {
+        locationManager.requestWhenInUseAuthorization()
+        locationManager.startUpdatingLocation()
     }
 
     #if DEBUG
