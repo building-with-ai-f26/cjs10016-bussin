@@ -47,7 +47,10 @@ struct SearchView: View {
         .scrollContentBackground(.hidden)
         .navigationTitle("Where to?")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear { focused = true }
+        .onAppear {
+            focused = true
+            Analytics.capture("search_opened")
+        }
     }
 
     @ViewBuilder
@@ -55,7 +58,7 @@ struct SearchView: View {
         if !places.isEmpty {
             Section(title) {
                 ForEach(places) { d in
-                    Button { open(d) } label: { Label(d.name, systemImage: icon).foregroundStyle(Color.primary) }
+                    Button { open(d, from: title == "Favorites" ? .favorite : .recent) } label: { Label(d.name, systemImage: icon).foregroundStyle(Color.primary) }
                 }
             }
         }
@@ -66,11 +69,12 @@ struct SearchView: View {
         defer { resolving = false }
         guard let d = await search.resolve(s) else { lookupFailed = true; return }
         lookupFailed = false
-        open(d)
+        open(d, from: .search)
     }
 
     /// Replace the search screen with the answer, so Back goes home.
-    private func open(_ d: Destination) {
+    private func open(_ d: Destination, from source: Analytics.PlaceSource) {
+        Analytics.capture("place_selected", ["source": source.rawValue])
         saved.noteSearched(d)
         path = [.trip(d)]
     }

@@ -1,5 +1,6 @@
 import Foundation
 import PostHog
+import CoreLocation
 
 enum Analytics {
     private(set) static var isEnabled = false
@@ -44,6 +45,20 @@ enum Analytics {
         case .search, .trip:
             break       // the trip screen reports its own answer through planned(_:store:)
         }
+    }
+
+    /// Where a rider picked a destination from. Never the place itself.
+    enum PlaceSource: String { case search, favorite, recent }
+
+    /// Whether the rider said yes to location. Sent once per launch, once the answer is known.
+    static func locationPermission(_ status: CLAuthorizationStatus) {
+        let label: String
+        switch status {
+        case .authorizedAlways, .authorizedWhenInUse: label = "allowed"
+        case .denied, .restricted: label = "denied"
+        default: return                      // not asked yet: nothing to report
+        }
+        capture("location_permission", ["status": label])
     }
 
     /// What the planner answered. Records the route and stops, never the searched address.

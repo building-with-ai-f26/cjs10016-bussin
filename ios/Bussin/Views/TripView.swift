@@ -57,7 +57,7 @@ struct TripView: View {
             if !plan.options.isEmpty {
                 Section("Shuttle") {
                     ForEach(plan.options) { o in
-                        Button { choseWalk = false; selection = o } label: { optionRow(o) }
+                        Button { choseWalk = false; selection = o; Analytics.capture("trip_option_selected", ["choice": "shuttle"]) } label: { optionRow(o) }
                             .listRowBackground(selection?.id == o.id ? Color.blue.opacity(0.12) : nil)
                         if o.busAtStopNow {
                             Label("A bus is at \(store.stop(o.boardStopId)?.name ?? "the stop") right now. You're \(Fmt.minutes(o.walkToStop)) away, so it may leave without you. The time above is the next one.",
@@ -78,7 +78,7 @@ struct TripView: View {
                     }
                     Button("Get directions in Apple Maps") { openInMaps() }
                 } else {
-                    Button { choseWalk = true; selection = nil } label: { walkRow(plan) }
+                    Button { choseWalk = true; selection = nil; Analytics.capture("trip_option_selected", ["choice": "walk"]) } label: { walkRow(plan) }
                         .listRowBackground(selection == nil ? Color.blue.opacity(0.12) : nil)
                 }
             }
@@ -98,7 +98,10 @@ struct TripView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { saved.toggleFavorite(destination) } label: {
+                Button {
+                    saved.toggleFavorite(destination)
+                    Analytics.capture("favorite_changed", ["added": saved.isFavorite(destination)])
+                } label: {
                     Image(systemName: saved.isFavorite(destination) ? "star.fill" : "star")
                 }
                 .accessibilityLabel(saved.isFavorite(destination) ? "Remove favorite" : "Add favorite")

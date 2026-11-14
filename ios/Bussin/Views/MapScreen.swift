@@ -131,6 +131,7 @@ struct MapScreen: View {
                 sheetShown = true
             }
         }
+        .onChange(of: location.status, initial: true) { _, status in Analytics.locationPermission(status) }
         .onAppear {
             #if DEBUG
             if UserDefaults.standard.bool(forKey: "resetWelcome") { hasSeenWelcome = false; return }

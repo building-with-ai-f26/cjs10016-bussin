@@ -50,12 +50,12 @@ struct HomeView: View {
             }
             if !saved.favorites.isEmpty {
                 Section("Favorites") {
-                    ForEach(saved.favorites) { placeRow($0, icon: "star.fill", tint: .yellow) }
+                    ForEach(saved.favorites) { placeRow($0, icon: "star.fill", tint: .yellow, source: .favorite) }
                 }
             }
             if !saved.homeRecents.isEmpty {
                 Section("Recent") {
-                    ForEach(saved.homeRecents) { placeRow($0, icon: "clock", tint: .secondary) }
+                    ForEach(saved.homeRecents) { placeRow($0, icon: "clock", tint: .secondary, source: .recent) }
                 }
             }
             if let stop = nearestStop {
@@ -147,7 +147,7 @@ struct HomeView: View {
         }
     }
 
-    private func placeRow(_ d: Destination, icon: String, tint: Color) -> some View {
+    private func placeRow(_ d: Destination, icon: String, tint: Color, source: Analytics.PlaceSource) -> some View {
         NavigationLink(value: Place.trip(d)) {
             HStack(spacing: RowMetrics.iconGap) {
                 Image(systemName: icon).font(.title3).foregroundStyle(tint).frame(width: RowMetrics.iconColumn)
@@ -158,6 +158,7 @@ struct HomeView: View {
             }
             .frame(minHeight: RowMetrics.minHeight)
         }
+        .simultaneousGesture(TapGesture().onEnded { Analytics.capture("place_selected", ["source": source.rawValue]) })
     }
 
     /// A quick straight-line answer, so it says "about". The trip screen has Apple's real walking times.
