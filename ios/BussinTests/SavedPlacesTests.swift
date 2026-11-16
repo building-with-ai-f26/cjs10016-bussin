@@ -35,6 +35,14 @@ final class SavedPlacesTests: XCTestCase {
         XCTAssertEqual(saved.recents.map(\.name), ["Bobst", "Tandon"])
     }
 
+    func testAnalyticsSourceIsFavoriteForStarredPlacesAndRecentForTheRest() {
+        let saved = SavedPlaces(defaults: defaults)
+        saved.noteSearched(place("Bobst"))
+        saved.toggleFavorite(place("Tandon"))
+        XCTAssertEqual(saved.source(of: place("Tandon")), .favorite)
+        XCTAssertEqual(saved.source(of: place("Bobst")), .recent)
+    }
+
     func testRecentsAreCapped() {
         let saved = SavedPlaces(defaults: defaults)
         (1...15).forEach { saved.noteSearched(place("Place \($0)")) }

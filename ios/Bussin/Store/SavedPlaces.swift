@@ -29,6 +29,9 @@ final class SavedPlaces {
         save("recents", recents)
     }
 
+    /// Which Home list a place came from, for analytics: starred places are favorites, the rest recents.
+    func source(of d: Destination) -> Analytics.PlaceSource { isFavorite(d) ? .favorite : .recent }
+
     /// What Home shows under the favorites.
     var homeRecents: [Destination] { Array(recents.filter { !favorites.contains($0) }.prefix(2)) }
 

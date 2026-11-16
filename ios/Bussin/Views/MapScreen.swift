@@ -14,9 +14,16 @@ struct MapScreen: View {
     @State private var tripSelection: TripPlanner.Option?
     @State private var camera: MapCameraPosition = .region(MapScreen.nyu)
 
-    private static let nyu = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 40.7295, longitude: -73.9965),
-        span: MKCoordinateSpan(latitudeDelta: 0.045, longitudeDelta: 0.035))
+    /// Where every shuttle route runs: the Manhattan stretch of all seven, from the Village and
+    /// Tribeca up the East Side to Langone. Route A's tail to MetroTech in Brooklyn is left out on
+    /// purpose, so the opening view isn't pulled south. Opening Route A still frames the whole line.
+    private static let routeArea = [
+        CLLocationCoordinate2D(latitude: 40.7152, longitude: -74.0086),
+        CLLocationCoordinate2D(latitude: 40.7457, longitude: -73.9740),
+    ]
+
+    /// The opening view, and the one Home returns to: all the routes, sitting above the panel.
+    private static let nyu = region(fitting: routeArea)
 
     /// What the sheet is showing right now; the map highlights the same thing.
     private var focus: Place? { path.last }
@@ -105,6 +112,10 @@ struct MapScreen: View {
         }
         .onChange(of: path) { old, new in
             withAnimation(.easeInOut(duration: 0.5)) { camera = cameraForFocus() }
+            // A saved place opened from Home. (Search results report themselves in SearchView.)
+            if case .trip(let d)? = new.last, old.isEmpty {
+                Analytics.capture("place_selected", ["source": saved.source(of: d).rawValue])
+            }
             // Count forward navigation only, not going back.
             if new.count >= old.count, let place = new.last { Analytics.viewed(place, store: store) }
         }
@@ -239,9 +250,16 @@ struct MapScreen: View {
 
     /// A region that shows `coords` in the top half of the screen, above the panel.
     private func regionAbovePanel(fitting coords: [CLLocationCoordinate2D], minSpan: Double = 0.005) -> MKCoordinateRegion {
+        Self.region(fitting: coords, minSpan: minSpan)
+    }
+
+    private static func region(fitting coords: [CLLocationCoordinate2D], minSpan: Double = 0.005) -> MKCoordinateRegion {
         let lats = coords.map(\.latitude), lons = coords.map(\.longitude)
         guard let minLat = lats.min(), let maxLat = lats.max(),
-              let minLon = lons.min(), let maxLon = lons.max() else { return Self.nyu }
+              let minLon = lons.min(), let maxLon = lons.max() else {
+            return MKCoordinateRegion(center: .init(latitude: 40.7295, longitude: -73.9965),
+                                      span: .init(latitudeDelta: 0.045, longitudeDelta: 0.035))
+        }
         // The visible area above a medium panel is about half the screen; pad 30%.
         let latSpan = max(minSpan, (maxLat - minLat) * 1.3) / 0.5
         let lonSpan = max(minSpan, (maxLon - minLon) * 1.3)
