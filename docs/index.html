@@ -187,7 +187,7 @@
     <!-- LIVING PRD (Updated every week!) -->
     <section id="prd">
       <h2>Living PRD (Product Requirements Document)</h2>
-      <p class="meta">Updated every week as we test with real users and learn what works.</p>
+      <p class="meta">Updated every week as we test with real users and learn what works. v2 · Nov 16, 2026.</p>
 
       <h3>1. Target User & The Job to Be Done</h3>
       <p><strong>Who is this for?</strong> NYU undergrad and grad students who use the free NYU shuttles, especially commuters getting to and from campus. My first testers will be my classmates.</p>
@@ -214,18 +214,39 @@
       </ul>
 
       <h3>3. How It Works Under the Hood & Riskiest Assumption (Week 2+)</h3>
-      <p><strong>Riskiest Assumption:</strong> Permission to use the live bus feed. On Nov 8 I found that Passio GO's feed returns NYU's routes, stops, and live bus positions without a login. What I haven't confirmed is whether Passio allows a third-party app to use it, which matters if Bussin goes in the App Store. If the answer is no, I'll need NYU's help or another data source.</p>
-      <p><strong>Simple Architecture:</strong> Your location or chosen stop, plus a destination → Bussin iOS app (SwiftUI) → Passio GO live feed for bus positions, routes, and stops → Apple Maps (MapKit) showing the next bus, its ETA, and a suggested route</p>
+      <p><strong>Riskiest assumption:</strong> That Bussin can grow into something that earns money, or that NYU adopts, without Passio or NYU shutting it down. There are two ways that fails.</p>
+      <ol>
+        <li><strong>My access gets blocked.</strong> On Nov 8 I confirmed that Passio GO's feed hands out NYU's routes, stops, and live bus positions with no login. I have not confirmed that Passio or NYU allows a third-party app to use it. A free student project can slide by unnoticed. An app that charges for anything is the likeliest thing to make them act. If the feed gets blocked or locked behind a key, Bussin shows no buses, and the buses are the whole product.</li>
+        <li><strong>NYU never switches to my app.</strong> Passio's tracking hardware is installed on the shuttles, so NYU's bus data is tied to Passio. Bussin can't replace that, because it has no other source of bus positions. So even the best outcome, NYU pointing students to Bussin, means NYU asking Passio to allow it, and Passio has no reason to say yes to an app that competes with its own.</li>
+      </ol>
+      <p>Success also adds a technical risk. Every phone with the app open asks Passio for bus positions every four seconds, so 100 riders at once is about 25 requests a second landing on a service I don't pay for.</p>
+
+      <p><strong>How this build tests it:</strong> Code can't prove permission or win over NYU, so the build measures three things and leaves the fourth to a person.</p>
+      <ol>
+        <li><strong>Does the feed stay open?</strong> The ridership collector has called it 24 times since Nov 10 and every call succeeded. My phone and the simulator have polled it every four seconds throughout the build with no blocking. That is one location and one user, so it shows the feed is open today, not that it stays open under load. Failing would look like a blocked response or an empty feed during hours the shuttles run. One more limit: GitHub runs the collector about four times a day instead of every 15 minutes, so 24 samples is what I have, not hundreds. I need a more reliable trigger before I lean on this evidence.</li>
+        <li><strong>What does a rider see if the feed goes away?</strong> The app tells them "Can't reach live bus data" and keeps showing the last buses it saw instead of an empty map. Automated tests cover that logic. I have never seen a real block, so the logic is checked but the experience is not.</li>
+        <li><strong>What do real riders run into?</strong> When my classmates install it through TestFlight, PostHog will show how many open the app and how many sessions hit the "Can't reach" notice. I'm adding an event for that notice before the link goes out. Failing would look like the notice showing up in more than a handful of sessions.</li>
+        <li><strong>Ask.</strong> Only NYU Transportation and Passio can settle this. I need three answers: may a third-party app use the feed, does that change if the app charges, and would NYU point students to Bussin. [Fill in: the date I emailed them and what they said.] If the answer is no, only the data layer (PassioAPI in the app) has to change, and the screens, arrival math, and trip planner carry over. The catch is that no other source matches Passio's hardware. The nearest alternative is "ride mode" under Future Features, where riders share their own GPS, and that is a long way from a replacement.</li>
+      </ol>
+
+      <p><strong>How the app works:</strong> A rider's location or chosen stop, plus a destination → Bussin iOS app (SwiftUI) → Passio GO feed for bus positions, routes, and stops, and Apple Maps for place search and walking routes → live arrival times and a ride-or-walk answer on the map.</p>
+      <ul>
+        <li><strong>Where each bus is.</strong> Every four seconds the app reads each bus's position and snaps it onto its route line. Speed is averaged over about two minutes of driving so a red light doesn't swing every estimate, and a reading more than 300 meters off the route gets dropped. (One Route B bus once reported it was in New Hampshire.) On screen, each bus slides to its new spot instead of jumping.</li>
+        <li><strong>When it arrives.</strong> The distance left along the route to your stop, divided by that bus's average speed. Loops wrap around, and a bus that just passed your stop correctly shows a long wait.</li>
+        <li><strong>Ride or walk.</strong> Type any address or place and Apple Maps finds it. For each running route the app picks the stops that give the shortest total trip, then asks Apple Maps for the real walking times to and from those stops (at most 9 requests per trip) and compares the result with walking the whole way. If walking wins, it says so.</li>
+        <li><strong>What stays on the phone.</strong> Favorites and recent places. Usage counts go to PostHog as named events such as <code>trip_planned</code>, which records the route and the two stops. They never include a place name, an address, or coordinates.</li>
+        <li><strong>How I know it works.</strong> 43 automated tests cover the feed parsing, the arrival math, the trip planner, and the notices. The screens I check in the simulator and on my own phone.</li>
+      </ul>
 
       <h3>4. Unit Economics & Analytics Snapshot (Updated Weekly)</h3>
       <div class="grid-2">
         <div class="stat-box">
           <div class="stat-label">Cumulative Build Spend</div>
-          <div class="stat-value">$0 beyond Claude subscription</div>
+          <div class="stat-value">$99 Apple Developer Program, plus my Claude subscription</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">Est. Cost Per User Run</div>
-          <div class="stat-value">[Not yet estimated]</div>
+          <div class="stat-value">$0.00 marginal, about $0.008 with the Apple fee spread out</div>
         </div>
         <div class="stat-box">
           <div class="stat-label">User Evidence (Analytics from Build 2)</div>
@@ -236,6 +257,16 @@
           <div class="stat-value">TBD</div>
         </div>
       </div>
+
+      <p><strong>How I got the cost number.</strong> A run is one rider opening the app, checking a stop, and planning one trip, about five minutes. Here is what each run uses:</p>
+      <ul>
+        <li><strong>Passio feed:</strong> about 75 bus-position requests at four seconds apart. I measured one at 3.3 KB on Nov 16, so roughly 250 KB per run, plus the route and stop list on open (157 KB). It costs me nothing.</li>
+        <li><strong>Apple Maps:</strong> one place search and up to 9 walking routes. MapKit has no per-request fee. Apple limits an app to about 50 directions requests a minute instead of billing for them.</li>
+        <li><strong>PostHog:</strong> about 8 events per run. Their free plan, which I understand covers 1 million events a month (I should confirm on their pricing page), would stretch to around 100,000 runs a month.</li>
+        <li><strong>Ridership collector:</strong> GitHub Actions on a public repo, which is free.</li>
+        <li><strong>AI at runtime:</strong> none. The app makes no AI calls, so cost doesn't climb as people use it.</li>
+      </ul>
+      <p>The one fixed cost is the $99 a year Apple Developer Program, or $8.25 a month. At 1,000 runs a month that is about $0.008 per run, and it falls as use grows. What does grow with use is the load on Passio: the 25 requests a second from 100 simultaneous riders. If that becomes a problem, I would put a small relay of my own between the phones and Passio, asking Passio once every four seconds and answering every phone from that. I haven't priced it.</p>
     </section>
 
     <!-- WEEKLY BUILD LOG (Updated at least twice a week via Git commits) -->
