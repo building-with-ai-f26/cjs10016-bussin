@@ -143,6 +143,17 @@
       font-size: 13px;
       color: var(--muted);
     }
+    .shots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 24px;
+      justify-content: center;
+      margin: 20px 0 8px;
+    }
+    .shots .shot {
+      margin: 0;
+      flex: 0 1 300px;
+    }
     .shot {
       margin: 16px 0 0;
       text-align: center;
@@ -175,13 +186,20 @@
     <section id="live-demo">
       <h2>Product Showcase (Prototype / Live App / 2-Min Video)</h2>
       <p>
-        <strong>Current Status:</strong> Build 2: the native iOS app runs against the live feed, with real arrival times and stop, route and bus screens. Trip planning is next.<br />
-        <strong>Demo:</strong> <a href="prototype/">Try the interactive prototype</a>. Search for a destination, compare shuttle options, and tap any stop or bus. It works on your phone, too. The first design pass is the <a href="mockup/home.html">home screen mockup</a>.
+        <strong>Current Status:</strong> The native iOS app works end to end and runs on my own iPhone. It shows every NYU shuttle moving on Apple Maps, live arrival times at each stop, and a trip planner: search any place and it says whether a shuttle beats walking, using real Apple Maps walking times. A public TestFlight link for classmates is next.<br />
+        <strong>Demo:</strong> <a href="prototype/">Try the interactive prototype</a> in any browser, or <a href="mockup/home.html">see the first design mockup</a>.
       </p>
-      <figure class="shot">
-        <a href="mockup/home.html"><img src="images/home-mockup.png" alt="Bussin home screen: a map around Washington Square with NYU shuttle routes drawn on it, and a bottom sheet listing the next buses at 715 Broadway with arrival times" width="289" height="600" /></a>
-        <figcaption class="meta">The routes and stops are real NYU data from Passio GO's public feed. Bus positions and arrival times are simulated for now.</figcaption>
-      </figure>
+      <div class="shots">
+        <figure class="shot">
+          <img src="images/app-home.jpg" alt="Bussin home screen in the iPhone simulator: a map of lower Manhattan with NYU shuttle routes and live buses, and a panel showing the nearest stop, 715 Broadway, with Route A arriving now and Route B in 3 minutes" width="320" height="696" />
+          <figcaption class="meta">Home: your nearest stop and the next buses, live.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img src="images/app-trip.jpg" alt="Bussin trip screen for NYU Langone Health: a Route E shuttle in 12 minutes, 27 minutes total, with walk, ride, and walk steps, and the route drawn on the map" width="320" height="696" />
+          <figcaption class="meta">Trip: ride Route E for 6 stops, 27 minutes door to door.</figcaption>
+        </figure>
+      </div>
+      <p class="meta">Screenshots of the real app on Nov 16, 2026, from the iPhone simulator with the live Passio GO feed. Bus positions and times are real, taken at midday.</p>
     </section>
 
     <!-- LIVING PRD (Updated every week!) -->
