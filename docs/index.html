@@ -82,6 +82,7 @@
       background: var(--accent);
       color: #fff;
     }
+    .btn[hidden] { display: none; }
     .btn-secondary {
       background: var(--card);
       color: var(--text);
@@ -176,6 +177,7 @@
       <h1>Bussin</h1>
       <p class="tagline">For NYU students who ride the free shuttles: see where your bus is, when it reaches your stop, and which route gets you where you're going.</p>
       <div class="cta-row">
+        <a class="btn" id="beta-btn" href="#" hidden onclick="window.posthog && posthog.capture('clicked_try_beta')">Try the beta →</a>
         <a class="btn" href="#live-demo" onclick="window.posthog && posthog.capture('clicked_try_product')">See the Product →</a>
         <a class="btn btn-secondary" href="#prd">Read the Living PRD</a>
         <a class="btn btn-secondary" href="#build-log">Weekly Build Log</a>
@@ -344,5 +346,15 @@
     </section>
   </div>
   <p style="text-align:center;font-size:14px;margin:0 0 32px"><a href="privacy.html">Privacy</a></p>
+  <script>
+    // "Try the beta" stays hidden until Apple approves the TestFlight build.
+    // Then paste the public link between the quotes (https://testflight.apple.com/join/...).
+    var BETA_LINK = "";
+    if (/^https:\/\/testflight\.apple\.com\//.test(BETA_LINK)) {
+      var betaBtn = document.getElementById("beta-btn");
+      betaBtn.href = BETA_LINK;
+      betaBtn.hidden = false;
+    }
+  </script>
 </body>
 </html>

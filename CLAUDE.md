@@ -17,7 +17,7 @@ This file holds the working agreements and current state that used to live only 
 - **Pace.** Chris builds ahead of the class calendar and logs each class build in `docs/index.html` before it is due.
 - **Workflow.** Use the superpowers flow: brainstorm, then write a plan in `docs/superpowers/plans/`, then execute it inline, then finish the branch. Run tests before claiming anything works.
 
-## Where things stand (Nov 12, 2026)
+## Where things stand (Nov 17, 2026)
 
 - **Phase 1 is merged.** This is the walking skeleton: live buses, routes, and stops on Apple Maps, with the Passio feed parsed and tested.
 - **Phase 2 is merged.** It added ETAs and the four screens:
@@ -44,11 +44,17 @@ This file holds the working agreements and current state that used to live only 
 
 ## What's next
 
-1. **Build 2 (due Nov 16).** Chris needs to screenshot the `$pageview` and `clicked_try_product` events in PostHog and fill in the hours in the Build 2 log in `docs/index.html`.
+1. **Build 2 (was due Nov 16).** Four "[Fill in]" placeholders are still in the Build 2 log and PRD in `docs/index.html`: Chris's hours, the PostHog screenshots (pageview, click, recording, after a test visit with AdBlock paused), the date Chris emailed NYU Transportation and what they said, and "What broke / changed in PRD". Only Chris has those details.
 2. **Ride-test Phase 3.** Chris rides with the app for a day. Still unseen with real buses: a daytime trip where a shuttle beats walking, smooth bus movement, and the "bus is at your stop" note.
    - A bus waiting at your boarding stop: if you're within a minute's walk the planner boards it; from further away it quotes the next sure bus and adds a "may leave without you" note. The app has no timetable, so it can't say when a waiting bus departs. Not yet seen live in the simulator, only in tests.
-3. **Phase 4: share-ready.** The app side is done (welcome card, notices, funnel events, privacy page, release settings, dashboard). Only the TestFlight upload is left. It fails with "App record with bundle identifier com.schwaigs.bussin not found" until Chris registers the ID at developer.apple.com and creates the app in App Store Connect. Then: `cd ios && xcodebuild -project Bussin.xcodeproj -scheme Bussin -configuration Release -destination 'generic/platform=iOS' -archivePath build/Bussin.xcarchive -allowProvisioningUpdates archive`, then `xcodebuild -exportArchive` with an export options plist (method app-store-connect, destination upload, the team ID), or Xcode's Organizer.
-   Earlier notes on Phase 4: Get the app ready for TestFlight. The app uses the Station sign icon for now (Chris's pick on Nov 12, may change). `swift tools/make-app-icon.swift` redraws it. The final icon still needs rebuilding as layers in Apple's Icon Composer.
+3. **Phase 4: share-ready.** The app side is done (welcome card, notices, funnel events, privacy page, release settings, dashboard). TestFlight is in Apple's hands:
+   - Build 1.0.0 (1) was uploaded on Nov 17 and submitted for Beta App Review the same day, in the **external** TestFlight group "NYU Riders". Status: waiting for review (usually under a day, sometimes two).
+   - The App Store Connect name is **Bussin Transit** because "Bussin" was taken. The name under the icon on a phone is still "Bussin". The name can change later without a new build.
+   - There is also an internal group called "NYU Riders". It can't carry a public link, so ignore it.
+   - Test Information, feedback email (supported.application@gmail.com), privacy URL, and review notes are filled in in App Store Connect.
+   - **When Apple approves:** Chris opens the external group, turns on Public Link, and sends me the link. I paste it into `BETA_LINK` at the bottom of `docs/index.html` (the "Try the beta" button is built and stays hidden until that is set), then update this file and the build map.
+   - **If Apple rejects:** the email says what to fix. A new build needs a higher `CURRENT_PROJECT_VERSION` in `ios/project.yml` (it is 1 now), then `xcodegen generate`, then archive: `cd ios && xcodebuild -project Bussin.xcodeproj -scheme Bussin -configuration Release -destination 'generic/platform=iOS' -archivePath build/Bussin.xcarchive -allowProvisioningUpdates archive`, then `xcodebuild -exportArchive` with an export options plist (method app-store-connect, destination upload, the team ID). That upload path worked on Nov 17.
+   - The app uses the Station sign icon for now (Chris's pick on Nov 12, may change). `swift tools/make-app-icon.swift` redraws it. The final icon still needs rebuilding as layers in Apple's Icon Composer.
 4. **Phase 5: roadmap.**
    - Service alerts, including holiday schedules.
    - A Campus Safety report button.
