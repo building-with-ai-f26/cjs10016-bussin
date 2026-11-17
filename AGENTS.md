@@ -59,3 +59,16 @@ build-map.html            the visual progress tracker (published as a Claude art
 4. **Verify changes:** Run relevant checks. For a reproducible logic bug, use a failing test to demonstrate the fix when practical. Record manual checks and known limitations; follow the selected Build 4 evaluation track.
 5. **Zero secrets in code:** Never hardcode API keys, tokens, or credentials. Keys and the Apple team ID live in the gitignored `ios/Secrets.xcconfig`, which feeds the build through `Config.xcconfig` and `project.yml`. When a new variable is needed, add a placeholder for it to `ios/Secrets.example.xcconfig`. (The PostHog project key is a public, write-only client key, which is why it also appears in the product page's script. Nothing else is allowed there.)
 6. **Stop when looping:** If a fix fails twice in a row, stop, summarize what failed, and ask the human before trying a third approach.
+
+## 4. Shipping
+1. Run the tests before every commit.
+2. Work on a branch. Open a pull request.
+3. Merge only when the checks pass.
+4. Merging to main deploys the site (the product page publishes from `docs/` on `main`).
+5. Open the live URL. Check what you changed.
+6. Tell me what is live, and what you checked.
+
+## 5. Ask me first
+- Deleting data or changing the database
+- Keys, secrets and permissions
+- Anything that costs money
