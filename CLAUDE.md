@@ -36,6 +36,8 @@ This file holds the working agreements and current state that used to live only 
   - Installed on Chris's iPhone on Nov 11 signed with Chris's paid Apple Developer team. The signing profile runs until Nov 12, 2027. The team ID lives in `ios/Secrets.xcconfig` as `DEVELOPMENT_TEAM`. To reinstall: build with `-destination 'id=<phone UDID>' -allowProvisioningUpdates`, then `xcrun devicectl device install app`.
 - **PostHog is live.**
   - iOS reads its key from the gitignored `ios/Secrets.xcconfig`, which only exists on Chris's laptop. Analytics is off in any build without it. The app sends named events: `app_opened`, `route_viewed`, `stop_viewed`, and `bus_viewed`. Automatic screen tracking is off.
+  - Every app event carries `app_environment` (`debug` for Xcode and simulator runs, `release` for TestFlight). Filter on it to leave Chris's own testing out of charts. The name `build` is taken by PostHog, and `$is_testflight` can't be used for this because Xcode installs on a phone report as TestFlight too.
+  - The "Bussin metrics" dashboard (PostHog project 721533, dashboard 2366469) holds the funnel, trip outcomes, location permission, routes viewed, retention, product page visits, and daily users.
   - The product page carries the PostHog web snippet. Chris's Chrome has AdBlock, which blocks PostHog, so Chris tests the page with AdBlock paused.
 - **Ridership collector.** It runs in a separate repo, `schwaigs-cj/bussin-data`. A GitHub Action logs riders aboard each bus every 15 minutes, which builds evidence for suggesting route changes to NYU.
 - **Research.** Competitive research on Passio and its competitors is in `research/`.

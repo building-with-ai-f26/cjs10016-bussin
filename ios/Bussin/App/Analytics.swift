@@ -5,6 +5,16 @@ import CoreLocation
 enum Analytics {
     private(set) static var isEnabled = false
 
+    /// Tells my own Xcode and simulator runs ("debug") apart from TestFlight installs ("release"),
+    /// so PostHog charts can leave my testing out. Sent on every event.
+    static let buildLabel: String = {
+        #if DEBUG
+        return "debug"
+        #else
+        return "release"
+        #endif
+    }()
+
     /// No-op unless a real key is present (Secrets.xcconfig → Info.plist).
     static func start() {
         guard let key = Bundle.main.object(forInfoDictionaryKey: "PostHogApiKey") as? String,
@@ -18,6 +28,7 @@ enum Analytics {
         config.flushAt = 1           // send immediately instead of batching
         #endif
         PostHogSDK.shared.setup(config)
+        PostHogSDK.shared.register(["app_environment": buildLabel])   // not "build": PostHog already uses that name
         isEnabled = true
         capture("app_opened")
     }
