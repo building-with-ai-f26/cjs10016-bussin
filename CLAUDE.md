@@ -32,7 +32,7 @@ This file holds the working agreements and current state that used to live only 
   - Favorites and the two latest searches sit on Home (`SavedPlaces`, stored on the phone).
   - Analytics send `trip_planned` and `no_good_option`, never the searched address.
   - Buses slide between feed updates (`GlidingMarker`). Home starts with the search row and shows the truly nearest stop, plus the nearest stop with a bus running when they differ.
-  - 39 XCTests pass.
+  - 46 XCTests pass.
   - Installed on Chris's iPhone on Nov 11 signed with Chris's paid Apple Developer team. The signing profile runs until Nov 12, 2027. The team ID lives in `ios/Secrets.xcconfig` as `DEVELOPMENT_TEAM`. To reinstall: build with `-destination 'id=<phone UDID>' -allowProvisioningUpdates`, then `xcrun devicectl device install app`.
 - **PostHog is live.**
   - iOS reads its key from the gitignored `ios/Secrets.xcconfig`, which only exists on Chris's laptop. Analytics is off in any build without it. The app sends named events: `app_opened`, `route_viewed`, `stop_viewed`, and `bus_viewed`. Automatic screen tracking is off.
@@ -47,7 +47,8 @@ This file holds the working agreements and current state that used to live only 
 1. **Build 2 (due Nov 16).** Chris needs to screenshot the `$pageview` and `clicked_try_product` events in PostHog and fill in the hours in the Build 2 log in `docs/index.html`.
 2. **Ride-test Phase 3.** Chris rides with the app for a day. Still unseen with real buses: a daytime trip where a shuttle beats walking, smooth bus movement, and the "bus is at your stop" note.
    - A bus waiting at your boarding stop: if you're within a minute's walk the planner boards it; from further away it quotes the next sure bus and adds a "may leave without you" note. The app has no timetable, so it can't say when a waiting bus departs. Not yet seen live in the simulator, only in tests.
-3. **Phase 4: share-ready.** Get the app ready for TestFlight. The app uses the Station sign icon for now (Chris's pick on Nov 12, may change). `swift tools/make-app-icon.swift` redraws it. The final icon still needs rebuilding as layers in Apple's Icon Composer.
+3. **Phase 4: share-ready.** The app side is done (welcome card, notices, funnel events, privacy page, release settings, dashboard). Only the TestFlight upload is left. It fails with "App record with bundle identifier com.schwaigs.bussin not found" until Chris registers the ID at developer.apple.com and creates the app in App Store Connect. Then: `cd ios && xcodebuild -project Bussin.xcodeproj -scheme Bussin -configuration Release -destination 'generic/platform=iOS' -archivePath build/Bussin.xcarchive -allowProvisioningUpdates archive`, then `xcodebuild -exportArchive` with an export options plist (method app-store-connect, destination upload, the team ID), or Xcode's Organizer.
+   Earlier notes on Phase 4: Get the app ready for TestFlight. The app uses the Station sign icon for now (Chris's pick on Nov 12, may change). `swift tools/make-app-icon.swift` redraws it. The final icon still needs rebuilding as layers in Apple's Icon Composer.
 4. **Phase 5: roadmap.**
    - Service alerts, including holiday schedules.
    - A Campus Safety report button.

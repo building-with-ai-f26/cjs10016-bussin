@@ -19,4 +19,12 @@ final class ServiceStatusTests: XCTestCase {
         XCTAssertEqual(ServiceStatus.notice(feed: .stale("x"), busCount: 0), .feedDown)
         XCTAssertEqual(ServiceStatus.notice(feed: .stale("x"), busCount: 4), .feedDown)
     }
+
+    func testTheFeedGoingDownCountsOnceNotOnEveryPoll() {
+        XCTAssertTrue(ServiceStatus.feedJustWentDown(from: .live, to: .stale("x")))
+        XCTAssertTrue(ServiceStatus.feedJustWentDown(from: .loading, to: .stale("x")))
+        XCTAssertFalse(ServiceStatus.feedJustWentDown(from: .stale("x"), to: .stale("y")), "still down, already counted")
+        XCTAssertFalse(ServiceStatus.feedJustWentDown(from: .stale("x"), to: .live))
+        XCTAssertFalse(ServiceStatus.feedJustWentDown(from: .live, to: .live))
+    }
 }
