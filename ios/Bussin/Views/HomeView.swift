@@ -7,6 +7,7 @@ struct HomeView: View {
     let userCoordinate: CLLocationCoordinate2D?
     let locationDenied: Bool
     @Environment(\.openURL) private var openURL
+    @AppStorage(Appearance.storageKey) private var appearance = Appearance.standard
 
     private var from: CLLocationCoordinate2D { userCoordinate ?? TripView.hub }
 
@@ -85,7 +86,13 @@ struct HomeView: View {
             }
 
             Section {
-                EmptyView()
+                Picker("Appearance", selection: $appearance) {
+                    ForEach(Appearance.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            } header: {
+                Text("Appearance")
             } footer: {
                 Text("Not an official NYU app · [Privacy](https://building-with-ai-f26.github.io/cjs10016-bussin/privacy.html)")
                     .font(.footnote)
