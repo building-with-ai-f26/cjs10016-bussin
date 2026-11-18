@@ -82,6 +82,7 @@
       background: var(--accent);
       color: #fff;
     }
+    .btn[hidden] { display: none; }
     .btn-secondary {
       background: var(--card);
       color: var(--text);
@@ -176,6 +177,7 @@
       <h1>Bussin</h1>
       <p class="tagline">For NYU students who ride the free shuttles: see where your bus is, when it reaches your stop, and which route gets you where you're going.</p>
       <div class="cta-row">
+        <a class="btn" id="beta-btn" href="#" hidden onclick="window.posthog && posthog.capture('clicked_try_beta')">Try the beta →</a>
         <a class="btn" href="#live-demo" onclick="window.posthog && posthog.capture('clicked_try_product')">See the Product →</a>
         <a class="btn btn-secondary" href="#prd">Read the Living PRD</a>
         <a class="btn btn-secondary" href="#build-log">Weekly Build Log</a>
@@ -244,7 +246,7 @@
         <li><strong>Does the feed stay open?</strong> The ridership collector has called it 24 times since Nov 10 and every call succeeded. My phone and the simulator have polled it every four seconds throughout the build with no blocking. That is one location and one user, so it shows the feed is open today, not that it stays open under load. Failing would look like a blocked response or an empty feed during hours the shuttles run. One more limit: GitHub runs the collector about four times a day instead of every 15 minutes, so 24 samples is what I have, not hundreds. I need a more reliable trigger before I lean on this evidence.</li>
         <li><strong>What does a rider see if the feed goes away?</strong> The app tells them "Can't reach live bus data" and keeps showing the last buses it saw instead of an empty map. Automated tests cover that logic. I have never seen a real block, so the logic is checked but the experience is not.</li>
         <li><strong>What do real riders run into?</strong> When my classmates install it through TestFlight, PostHog will show how many open the app and how many sessions hit the "Can't reach" notice. The app sends a <code>feed_unreachable</code> event when a rider hits that notice, and my PostHog dashboard counts it. Failing would look like the notice showing up in more than a handful of sessions.</li>
-        <li><strong>Ask.</strong> Only NYU Transportation and Passio can settle this. I need three answers: may a third-party app use the feed, does that change if the app charges, and would NYU point students to Bussin. [Fill in: the date I emailed them and what they said.] If the answer is no, only the data layer (PassioAPI in the app) has to change, and the screens, arrival math, and trip planner carry over. The catch is that no other source matches Passio's hardware. The nearest alternative is "ride mode" under Future Features, where riders share their own GPS, and that is a long way from a replacement.</li>
+        <li><strong>Ask.</strong> Only NYU Transportation and Passio can settle this. I need three answers: may a third-party app use the feed, does that change if the app charges, and would NYU point students to Bussin. I haven't emailed them yet (as of Nov 17). I'll send it this week and log the date and their answer here. If the answer is no, only the data layer (PassioAPI in the app) has to change, and the screens, arrival math, and trip planner carry over. The catch is that no other source matches Passio's hardware. The nearest alternative is "ride mode" under Future Features, where riders share their own GPS, and that is a long way from a replacement.</li>
       </ol>
 
       <p><strong>How the app works:</strong> A rider's location or chosen stop, plus a destination → Bussin iOS app (SwiftUI) → Passio GO feed for bus positions, routes, and stops, and Apple Maps for place search and walking routes → live arrival times and a ride-or-walk answer on the map.</p>
@@ -310,7 +312,7 @@
           <li><strong>Commits:</strong> On five different days: Nov 10, 11, 12, 13, and 16.</li>
           <li><strong>What broke / changed in PRD:</strong> Real buses exposed bugs that tests had missed. One Route B bus reported it was in New Hampshire mid-service, so the app now ignores any GPS reading more than 300 meters off its route. A bus sitting at a red light threw every arrival time off by up to nine minutes, so speed now averages over about two minutes. Late at night, right after the only Route A bus left, a trip to Tandon said the shuttles don't go there, and a bus waiting at your stop counted as missed. Both are fixed. After I installed it on my phone, tapping a favorite did nothing: a tap handler I had added for analytics was swallowing the tap. My first attempt at smoother bus movement used 30% of the processor, so I replaced it. The ridership collector turned out to run about four times a day instead of every 15 minutes, because GitHub slows scheduled jobs on quiet repos. That is 24 samples in six days, too thin to claim anything by hour, and I haven't fixed it yet. The PRD's biggest risk changed: it is now that monetizing or growing gets my access blocked, or that NYU can't switch to Bussin because Passio's hardware is on the buses.</li>
           <li><strong>Lessons:</strong> Every serious bug appeared only against live data, so I should test with real buses earlier. A feature can pass 43 tests and still be dead, as the favorites tap was, so tapping through every screen by hand has to stay on my checklist. The collector looked healthy because every run succeeded until I counted how many runs there were. And the hardest problem is not code. It is whether Passio and NYU will let Bussin exist.</li>
-          <li><strong>Cost & time this week:</strong> $99 for the Apple Developer Program, plus my Claude subscription. Running the app costs $0.00 per run: it makes no AI calls, and the feed, Apple Maps, the collector, and PostHog's free plan cost me nothing (details in PRD section 4). [Fill in: hours this week.]</li>
+          <li><strong>Cost & time this week:</strong> $99 for the Apple Developer Program, plus my Claude subscription. Running the app costs $0.00 per run: it makes no AI calls, and the feed, Apple Maps, the collector, and PostHog's free plan cost me nothing (details in PRD section 4). About 7 hours: roughly 6 working with Claude, counted from my chat timestamps with breaks over 20 minutes left out, plus 1 hour I'm estimating for work outside the chat.</li>
         </ul>
       </div>
 
@@ -318,8 +320,8 @@
         <h3>Build 3 · Build.exe: The Core Workflow (Due Nov 23)</h3>
         <ul>
           <li><strong>What shipped:</strong> [End-to-end workflow working with real inputs + PostHog funnel events]</li>
-          <li><strong>What broke / changed in PRD:</strong> [Fill in]</li>
-          <li><strong>Cost & time this week:</strong> $[0.00] · [0] hours</li>
+          <li><strong>What broke / changed in PRD:</strong> (So far, as of Nov 17.) The first TestFlight upload failed because Apple wants the app registered in App Store Connect before it accepts a build, and my bundle ID didn't show in the dropdown until I registered it at developer.apple.com. Then Apple said the name "Bussin" was already taken. I chose "Bussin Transit" over "Bussin Shuttles", because "Shuttles" would box the app in if it ever covers other routes, and I left NYU out of the name because it's their trademark. The label under the icon on a phone is still "Bussin". I also made my first testing group an internal one, which can't have a public link and skips Apple's beta review, so I made an external group and submitted the build to Apple for review. The PRD's goal is unchanged. The only change is the name in the App Store.</li>
+          <li><strong>Cost & time this week:</strong> $[0.00] · about 3 hours so far (1.7 in chat through the morning of Nov 17, plus 1 I'm estimating outside it)</li>
         </ul>
       </div>
 
@@ -344,5 +346,15 @@
     </section>
   </div>
   <p style="text-align:center;font-size:14px;margin:0 0 32px"><a href="privacy.html">Privacy</a></p>
+  <script>
+    // "Try the beta" stays hidden until Apple approves the TestFlight build.
+    // Then paste the public link between the quotes (https://testflight.apple.com/join/...).
+    var BETA_LINK = "";
+    if (/^https:\/\/testflight\.apple\.com\//.test(BETA_LINK)) {
+      var betaBtn = document.getElementById("beta-btn");
+      betaBtn.href = BETA_LINK;
+      betaBtn.hidden = false;
+    }
+  </script>
 </body>
 </html>
