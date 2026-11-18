@@ -32,7 +32,7 @@ This file holds the working agreements and current state that used to live only 
   - Favorites and the two latest searches sit on Home (`SavedPlaces`, stored on the phone).
   - Analytics send `trip_planned` and `no_good_option`, never the searched address.
   - Buses slide between feed updates (`GlidingMarker`). Home starts with the search row and shows the truly nearest stop, plus the nearest stop with a bus running when they differ.
-  - 46 XCTests pass.
+  - 46 XCTests passed at the end of Phase 3 and 4; 48 after Phase 4b.
   - Installed on Chris's iPhone on Nov 11 signed with Chris's paid Apple Developer team. The signing profile runs until Nov 12, 2027. The team ID lives in `ios/Secrets.xcconfig` as `DEVELOPMENT_TEAM`. To reinstall: build with `-destination 'id=<phone UDID>' -allowProvisioningUpdates`, then `xcrun devicectl device install app`.
 - **PostHog is live.**
   - iOS reads its key from the gitignored `ios/Secrets.xcconfig`, which only exists on Chris's laptop. Analytics is off in any build without it. The app sends named events: `app_opened`, `route_viewed`, `stop_viewed`, and `bus_viewed`. Automatic screen tracking is off.
@@ -44,7 +44,8 @@ This file holds the working agreements and current state that used to live only 
 
 ## What's next
 
-1. **Build 2 (was due Nov 16).** Four "[Fill in]" placeholders are still in the Build 2 log and PRD in `docs/index.html`: Chris's hours, the PostHog screenshots (pageview, click, recording, after a test visit with AdBlock paused), the date Chris emailed NYU Transportation and what they said, and "What broke / changed in PRD". Only Chris has those details.
+1. **Build 2 log.** Hours, the NYU email status (not sent as of Nov 17), and Build 3's "what broke so far" are filled in. One placeholder is left: the PostHog screenshots (pageview, click on "See the Product", a session recording), after a test visit with AdBlock paused.
+   - **Phase 4b: UI refresh (Nov 17).** Plan: `docs/superpowers/plans/2026-11-17-ios-phase-4b-ui-refresh.md`. Batch 1 (map feel) is merged: pinch-zoom no longer snaps back to an open bus, tapping the map shrinks the panel and tapping the panel restores it, the panel is the system Liquid Glass sheet on iOS 26+, and the app opens dark with a Light switch on Home (`Appearance`). The zoom fix still needs a check on Chris's phone with a moving bus. Next: bus arrows that follow the road (Fable/Opus), then trip planning (start anywhere, arrive by, every upcoming bus at a stop), then prototype address search.
 2. **Ride-test Phase 3.** Chris rides with the app for a day. Still unseen with real buses: a daytime trip where a shuttle beats walking, smooth bus movement, and the "bus is at your stop" note.
    - A bus waiting at your boarding stop: if you're within a minute's walk the planner boards it; from further away it quotes the next sure bus and adds a "may leave without you" note. The app has no timetable, so it can't say when a waiting bus departs. Not yet seen live in the simulator, only in tests.
 3. **Phase 4: share-ready.** The app side is done (welcome card, notices, funnel events, privacy page, release settings, dashboard). TestFlight is in Apple's hands:
