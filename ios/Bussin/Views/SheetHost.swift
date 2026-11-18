@@ -13,7 +13,8 @@ struct SheetHost: View {
 
     static let peek = PresentationDetent.height(140)
     static let medium = PresentationDetent.fraction(0.48)
-    @State private var detent: PresentationDetent = SheetHost.medium   // open where departures are visible
+    /// Owned by MapScreen, so tapping the map can shrink the panel. Opens at medium, where departures show.
+    @Binding var detent: PresentationDetent
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -30,13 +31,37 @@ struct SheetHost: View {
                 }
         }
         // Typing needs the whole panel; the answer sits at half height so the map shows the trip.
+        // Shrunk by a map tap: one tap anywhere on the panel brings it back, like Apple Maps.
+        // Only while shrunk, so at other heights every row and button works as usual.
+        .overlay {
+            if detent == Self.peek {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture { withAnimation { detent = Self.medium } }
+                    .accessibilityLabel("Show panel")
+                    .accessibilityAddTraits(.isButton)
+            }
+        }
         .onChange(of: path) { _, new in
             if new.last == .search { detent = .large }
+            else if !new.isEmpty, detent == Self.peek { detent = Self.medium }   // opened from the map: show it
             else if case .trip = new.last { detent = Self.medium }
         }
         .presentationDetents([Self.peek, Self.medium, .large], selection: $detent)
         .presentationBackgroundInteraction(.enabled(upThrough: Self.medium))
-        .presentationBackground(.regularMaterial)
+        .modifier(PanelBackground())
         .interactiveDismissDisabled()
+    }
+}
+
+/// On iOS 26 and later the system draws the panel as Liquid Glass, so leave it alone.
+/// Older iOS has no Liquid Glass and gets the frosted material it had before.
+private struct PanelBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content
+        } else {
+            content.presentationBackground(.regularMaterial)
+        }
     }
 }

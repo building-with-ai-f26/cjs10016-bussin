@@ -13,6 +13,7 @@ struct MapScreen: View {
     @State private var walks = WalkTimes()
     @State private var tripSelection: TripPlanner.Option?
     @State private var camera: MapCameraPosition = .region(MapScreen.nyu)
+    @State private var detent: PresentationDetent = SheetHost.medium
 
     /// Where every shuttle route runs: the Manhattan stretch of all seven, from the Village and
     /// Tribeca up the East Side to Langone. Route A's tail to MetroTech in Brooklyn is left out on
@@ -95,20 +96,26 @@ struct MapScreen: View {
             UserAnnotation()
         }
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
+        // Tapping the map itself shrinks the panel out of the way. A tap on a stop or bus opens it
+        // instead: the map hears that tap too, so skip anything on or right next to a marker.
+        .onTapGesture { point in
+            guard !isOnMarker(point, proxy: proxy) else { return }
+            withAnimation { detent = SheetHost.peek }
+        }
         }
         .overlay(alignment: .top) {
             if case .stale(let message) = store.feedState {
                 Text(message)
                     .font(.footnote.weight(.semibold))
                     .padding(.horizontal, 14).padding(.vertical, 8)
-                    .background(.ultraThinMaterial, in: Capsule())
+                    .modifier(GlassCapsule())
                     .padding(.top, 8)
             }
         }
         .sheet(isPresented: $sheetShown) {
             SheetHost(store: store, path: $path, userCoordinate: location.coordinate,
                       locationDenied: location.isDenied,
-                      saved: saved, walks: walks, tripSelection: $tripSelection)
+                      saved: saved, walks: walks, tripSelection: $tripSelection, detent: $detent)
         }
         .onChange(of: path) { old, new in
             withAnimation(.easeInOut(duration: 0.5)) { camera = cameraForFocus() }
@@ -125,8 +132,10 @@ struct MapScreen: View {
             withAnimation(.easeInOut(duration: 0.5)) { camera = cameraForFocus() }
         }
         .onChange(of: followedBusPosition) { _, _ in
-            // Follow the open bus as it moves, like the prototype's follow mode.
-            guard case .bus = focus else { return }
+            // Follow the open bus as it moves, like the prototype's follow mode. Once the rider
+            // pinches or drags the map, stop: re-centering every 4 seconds undid their zoom.
+            // Opening the bus again starts following again.
+            guard case .bus = focus, !camera.positionedByUser else { return }
             withAnimation(.easeInOut(duration: 1)) { camera = cameraForFocus() }
         }
         .task { await store.run() }
@@ -218,6 +227,17 @@ struct MapScreen: View {
         return "\(b.bus.coordinate.latitude),\(b.bus.coordinate.longitude)"
     }
 
+    /// Is this screen point on a stop or bus? Stops are 32 pt targets; buses get more room
+    /// because they slide toward their newest position between feed updates.
+    private func isOnMarker(_ point: CGPoint, proxy: MapProxy) -> Bool {
+        func near(_ c: CLLocationCoordinate2D, within r: CGFloat) -> Bool {
+            guard let s = proxy.convert(c, to: .local) else { return false }
+            return hypot(s.x - point.x, s.y - point.y) <= r
+        }
+        return store.stops.contains { near($0.coordinate, within: 22) }
+            || (store.trackedBuses + demoBuses).contains { near($0.bus.coordinate, within: 44) }
+    }
+
     private func busDimmed(_ bus: LiveBus) -> Bool {
         if case .bus(let id) = focus { return bus.id != id }   // a single bus: only it stays bright
         return isDimmed(route: bus.routeId)
@@ -272,6 +292,17 @@ struct MapScreen: View {
         let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2 - latSpan / 4,
                                             longitude: (minLon + maxLon) / 2)
         return MKCoordinateRegion(center: center, span: span)
+    }
+}
+
+/// A floating capsule over the map: Liquid Glass on iOS 26 and later, frosted before that.
+private struct GlassCapsule: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26, *) {
+            content.glassEffect(.regular, in: .capsule)
+        } else {
+            content.background(.ultraThinMaterial, in: Capsule())
+        }
     }
 }
 

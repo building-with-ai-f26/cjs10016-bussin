@@ -88,7 +88,8 @@ The visual language is borrowed deliberately from Apple Maps and the iOS system 
 **Key Characteristics:**
 - Answer-first hierarchy: times and route letters outrank titles and controls.
 - Apple's materials and manners; NYU's content and color.
-- Dual-appearance from birth: every token has a light and dark value.
+- Dual-appearance from birth: every token has a light and dark value. The iOS app opens dark by default (Chris's call, Nov 17, 2026) and riders can switch to light on Home.
+- On iOS 26 and later the panel is the system Liquid Glass sheet. Glass stays on the panel and floating controls, never on the content inside them.
 - Data colors are functional, never ornamental.
 
 ## Colors
