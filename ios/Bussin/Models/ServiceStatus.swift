@@ -14,6 +14,15 @@ enum ServiceStatus: Equatable {
         }
     }
 
+    /// True at the moment the feed goes from working (or still loading) to unreachable.
+    /// Used to count a rider hitting "Can't reach live bus data" once, not on every 4-second poll.
+    @MainActor
+    static func feedJustWentDown(from old: ShuttleStore.FeedState, to new: ShuttleStore.FeedState) -> Bool {
+        guard case .stale = new else { return false }
+        if case .stale = old { return false }
+        return true
+    }
+
     var icon: String {
         switch self {
         case .nothingRunning: return "moon.zzz.fill"

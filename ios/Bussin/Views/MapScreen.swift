@@ -142,6 +142,10 @@ struct MapScreen: View {
                 sheetShown = true
             }
         }
+        .onChange(of: store.feedState) { old, new in
+            // PRD risk test: how often do riders see "Can't reach live bus data"?
+            if ServiceStatus.feedJustWentDown(from: old, to: new) { Analytics.capture("feed_unreachable") }
+        }
         .onChange(of: location.status, initial: true) { _, status in Analytics.locationPermission(status) }
         .onAppear {
             #if DEBUG
