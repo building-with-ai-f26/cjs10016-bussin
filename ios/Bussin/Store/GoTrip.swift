@@ -10,6 +10,9 @@ final class GoTrip {
     private(set) var session: TripSession?
     private(set) var destination: Destination?
     private(set) var lastLocation: CLLocationCoordinate2D?
+    /// Where you were when you tapped Go. The trip screen asked Apple Maps for the walk from here,
+    /// so the dotted line on the map can follow real streets.
+    private(set) var startLocation: CLLocationCoordinate2D?
     /// Changes whenever a new location arrives, so the map can follow.
     var lastLocationKey: String { lastLocation.map { "\($0.latitude),\($0.longitude)" } ?? "" }
 
@@ -32,6 +35,7 @@ final class GoTrip {
                                   geometry: g, stops: store.stopsById, now: .now) else { return false }
         session = s
         self.destination = destination
+        startLocation = me
         Analytics.capture("trip_started", ["route": store.route(for: option.routeId)?.letter ?? ""])
         location?.beginTripTracking()
         card.askForNotifications()
@@ -59,6 +63,7 @@ final class GoTrip {
         #endif
         session = nil
         destination = nil
+        startLocation = nil
     }
 
     /// Runs for the life of the map screen; does nothing while no trip is running.

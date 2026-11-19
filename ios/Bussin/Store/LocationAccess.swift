@@ -8,6 +8,8 @@ import Observation
 final class LocationAccess: NSObject, CLLocationManagerDelegate {
     let manager = CLLocationManager()
     private(set) var status: CLAuthorizationStatus
+    /// Which way the phone is facing, in degrees from north. Only read during a Go trip.
+    private(set) var heading: Double?
 
     override init() {
         status = manager.authorizationStatus
@@ -35,12 +37,23 @@ final class LocationAccess: NSObject, CLLocationManagerDelegate {
         manager.showsBackgroundLocationIndicator = true
         manager.desiredAccuracy = kCLLocationAccuracyBest
         manager.startUpdatingLocation()
+        manager.headingFilter = 5
+        manager.startUpdatingHeading()
     }
 
     func endTripTracking() {
         tripSession?.invalidate()
         tripSession = nil
         manager.allowsBackgroundLocationUpdates = false
+        manager.stopUpdatingHeading()
+        heading = nil
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
+        // No reading when the compass needs calibrating; true north when iOS knows it.
+        let h: Double? = newHeading.headingAccuracy < 0 ? nil
+            : (newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading)
+        Task { @MainActor in self.heading = h }
     }
 
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
