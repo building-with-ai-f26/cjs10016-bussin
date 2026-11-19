@@ -84,12 +84,14 @@ enum Analytics {
                 "alight_stop": store.stop(o.alightStopId)?.name ?? o.alightStopId,
                 "minutes": Int((o.total / 60).rounded()),
                 "minutes_saved": Int(((plan.walkSeconds - o.total) / 60).rounded()),
+                "arrive_by": plan.arriveBy != nil,
             ])
         } else {
             capture("no_good_option", [
                 "walk_minutes": Int((plan.walkSeconds / 60).rounded()),
                 "too_far": plan.verdict == .tooFar,
                 "slower_shuttle_minutes": plan.options.first.map { Int((($0.total - plan.walkSeconds) / 60).rounded()) } ?? -1,
+                "arrive_by": plan.arriveBy != nil,
             ])
         }
     }
