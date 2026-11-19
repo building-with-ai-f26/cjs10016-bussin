@@ -36,3 +36,4 @@ ios/Secrets.xcconfig
 ios/build/
 ios/DerivedData/
 !ios/Secrets.example.xcconfig
+ios/BussinLiveActivity/Info.plist

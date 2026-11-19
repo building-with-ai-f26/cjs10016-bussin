@@ -15,6 +15,12 @@ final class GoTrip {
 
     static let tickSeconds = 2.0
 
+    private let card = GoLiveCard()
+    #if DEBUG
+    private var debugHoldingAlert = false
+    #endif
+    private weak var location: LocationAccess?
+
     var isRunning: Bool { session != nil }
 
     /// Starts following `option`. Returns false if the route or its stops aren't known.
@@ -27,7 +33,16 @@ final class GoTrip {
         session = s
         self.destination = destination
         Analytics.capture("trip_started", ["route": store.route(for: option.routeId)?.letter ?? ""])
+        location?.beginTripTracking()
+        card.askForNotifications()
+        let route = store.route(for: option.routeId)
+        card.start(GoActivityAttributes(routeLetter: route?.letter ?? "?", routeColorHex: route?.colorHex ?? "#8E8E93",
+                                        destinationName: destination.name),
+                   Self.liveState(s, status(store: store)))
         tick(store: store, me: me)
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: "goAlertTest") { debugAlertSoon(store: store) }
+        #endif
         return true
     }
 
@@ -37,12 +52,19 @@ final class GoTrip {
         let result = outcome ?? (s.step == .arrived ? "arrived" : s.step == .timedOut ? "timed_out" : "ended_early")
         Analytics.capture("trip_ended", ["outcome": result,
                                          "minutes": Int(Date.now.timeIntervalSince(s.startedAt) / 60)])
+        card.end(nil)
+        location?.endTripTracking()
+        #if DEBUG
+        debugHoldingAlert = false
+        #endif
         session = nil
         destination = nil
     }
 
     /// Runs for the life of the map screen; does nothing while no trip is running.
     func run(store: ShuttleStore, location: LocationAccess) async {
+        self.location = location
+        GoLiveCard.endLeftovers()
         while !Task.isCancelled {
             if session != nil { tick(store: store, me: location.coordinate) }
             try? await Task.sleep(for: .seconds(Self.tickSeconds))
@@ -61,6 +83,58 @@ final class GoTrip {
             case .switchedBus, .gotOff, .timedOut: break
             }
         }
+
+        // The lock screen card: redraw on change, and light the screen with a buzz at "get off next".
+        #if DEBUG
+        if debugHoldingAlert { return }
+        #endif
+        guard let words = status(store: store) else { return }
+        let state = Self.liveState(s, words)
+        if s.isOver {
+            card.end(state, after: s.step == .arrived ? 5 * 60 : 0)
+            location?.endTripTracking()
+        } else if events.contains(.getOffNext) {
+            card.update(state, alert: (words.title, words.detail))
+        } else {
+            card.update(state)
+        }
+    }
+
+    #if DEBUG
+    /// `-goAlertTest YES`: 8 seconds after Go, act as if the bus just passed the stop before yours,
+    /// so the lock screen alert and buzz can be checked without riding a real shuttle.
+    private func debugAlertSoon(store: ShuttleStore) {
+        Task {
+            try? await Task.sleep(for: .seconds(8))
+            guard let s = session else { return }
+            var state = Self.liveState(s, status(store: store))
+            state.title = "Get off at the next stop"
+            state.detail = store.stop(s.option.alightStopId)?.name ?? "your stop"
+            state.leg = 1
+            state.stopsLeft = 1
+            state.getOffNext = true
+            debugHoldingAlert = true        // keep normal ticks from redrawing over it
+            card.update(state, alert: (state.title, state.detail))
+            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        }
+    }
+    #endif
+
+    /// What the lock screen card shows for this step.
+    static func liveState(_ s: TripSession, _ words: Status?) -> GoActivityAttributes.ContentState {
+        let leg: Int
+        switch s.step {
+        case .toStop, .atStop: leg = 0
+        case .riding, .getOffNext: leg = 1
+        case .toDestination: leg = 2
+        case .arrived, .timedOut: leg = 3
+        }
+        let seconds = s.isAboard ? s.rideSecondsLeft : (leg == 0 ? s.busSecondsAway : nil)
+        return GoActivityAttributes.ContentState(
+            title: words?.title ?? "", detail: words?.detail ?? "", leg: leg,
+            minutes: seconds.map { Int(($0 / 60).rounded()) },
+            stopsLeft: s.isAboard ? s.stopsLeft : nil,
+            getOffNext: s.step == .getOffNext)
     }
 
     // MARK: - Words for each step

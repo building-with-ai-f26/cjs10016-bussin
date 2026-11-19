@@ -24,6 +24,25 @@ final class LocationAccess: NSObject, CLLocationManagerDelegate {
         manager.startUpdatingLocation()
     }
 
+    /// Go: keep following the rider with the screen off, for this trip only. iOS shows a small
+    /// blue location pill while this is on. The permission stays "While Using the App".
+    private var tripSession: CLBackgroundActivitySession?
+
+    func beginTripTracking() {
+        guard tripSession == nil, status == .authorizedWhenInUse || status == .authorizedAlways else { return }
+        tripSession = CLBackgroundActivitySession()
+        manager.allowsBackgroundLocationUpdates = true
+        manager.showsBackgroundLocationIndicator = true
+        manager.desiredAccuracy = kCLLocationAccuracyBest
+        manager.startUpdatingLocation()
+    }
+
+    func endTripTracking() {
+        tripSession?.invalidate()
+        tripSession = nil
+        manager.allowsBackgroundLocationUpdates = false
+    }
+
     nonisolated func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         let new = manager.authorizationStatus
         Task { @MainActor in self.status = new }

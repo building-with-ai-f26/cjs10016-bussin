@@ -15,9 +15,10 @@ targets:
   Bussin:
     type: application
     platform: iOS
-    sources: [Bussin]
+    sources: [Bussin, Shared]
     dependencies:
       - package: PostHog
+      - target: BussinLiveActivity
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.schwaigs.bussin
@@ -36,8 +37,32 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         ITSAppUsesNonExemptEncryption: false
-        NSLocationWhenInUseUsageDescription: Bussin uses your location to find your nearest shuttle stop and time your walk. It stays on your phone.
+        NSLocationWhenInUseUsageDescription: Bussin uses your location to find your nearest shuttle stop, time your walk, and during a trip you start with Go, tell you when to get off. It stays on your phone.
         PostHogApiKey: $(POSTHOG_API_KEY)
+        # Go keeps following your trip with the screen off, and shows a lock screen card.
+        UIBackgroundModes: [location]
+        NSSupportsLiveActivities: true
+  BussinLiveActivity:
+    type: app-extension
+    platform: iOS
+    sources: [BussinLiveActivity, Shared]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.schwaigs.bussin.LiveActivity
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        TARGETED_DEVICE_FAMILY: 1
+        SWIFT_VERSION: "5.0"
+    info:
+      path: BussinLiveActivity/Info.plist
+      properties:
+        CFBundleDisplayName: Bussin
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
   BussinTests:
     type: bundle.unit-test
     platform: iOS
