@@ -36,6 +36,24 @@ final class ETAEngineTests: XCTestCase {
         XCTAssertEqual(eta, 120, accuracy: 10)   // 480 m / 4 m/s
     }
 
+    func testEveryBusDueInTheNextHourWithItsNumber() throws {
+        let (catalog, gs) = try world()
+        let a = try XCTUnwrap(catalog.routes.first { $0.letter == "A" })
+        let g = try XCTUnwrap(gs[a.id])
+        let stop = g.stopDistances[2]
+        // Bus 1 is 480 m short (2 min); bus 2 is 4800 m short (20 min). A lap at 4 m/s is about 54 min.
+        let engine = ETAEngine(geometries: gs, buses: [bus(1, a.id, at: stop.distance - 480, g: g),
+                                                       bus(2, a.id, at: stop.distance - 4800, g: g)])
+        let lap = g.length / 4
+        let list = engine.upcoming(routeId: a.id, stopId: stop.stopId, within: 3600)
+        XCTAssertEqual(list.map(\.busId), lap + 120 <= 3600 ? [1, 2, 1] : [1, 2])
+        XCTAssertEqual(list[0].seconds, 120, accuracy: 10)
+        XCTAssertEqual(list[1].seconds, 1200, accuracy: 10)
+        XCTAssertTrue(list.allSatisfy { $0.seconds <= 3600 }, "nothing past the hour")
+        XCTAssertEqual(list.map(\.lap), lap + 120 <= 3600 ? [0, 0, 1] : [0, 0], "a bus's next time round is marked")
+        XCTAssertTrue(engine.upcoming(routeId: a.id, stopId: stop.stopId, within: 60).isEmpty)
+    }
+
     func testBusJustPastTheStopWrapsAround() throws {
         let (catalog, gs) = try world()
         let a = try XCTUnwrap(catalog.routes.first { $0.letter == "A" })  // A is a loop

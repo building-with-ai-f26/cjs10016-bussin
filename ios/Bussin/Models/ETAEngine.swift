@@ -46,6 +46,34 @@ struct ETAEngine {
     }
 
     /// One row per route serving a stop, soonest first. Routes with no buses get next == nil.
+    /// One bus reaching a stop: how soon, which bus, and whether it's that bus's next time round (lap 1+).
+    struct Arrival: Identifiable {
+        let seconds: Double
+        let busId: Int
+        let lap: Int
+        var id: String { "\(busId)-\(lap)" }
+    }
+
+    /// Every bus on a route due at a stop within `within` seconds, soonest first,
+    /// counting buses coming round again on a loop.
+    func upcoming(routeId: String, stopId: String, within: Double) -> [Arrival] {
+        guard let g = geometries[routeId],
+              let sd = g.stopDistances.first(where: { $0.stopId == stopId }) else { return [] }
+        var out: [Arrival] = []
+        for b in buses where b.bus.routeId == routeId {
+            let first = forwardGap(from: b.distanceAlong, to: sd.distance, length: g.length) / b.speed
+            var lap = 0
+            while true {
+                let t = first + Double(lap) * g.length / b.speed
+                if t > within { break }
+                out.append(Arrival(seconds: t, busId: b.id, lap: lap))
+                if !g.isLoop { break }
+                lap += 1
+            }
+        }
+        return out.sorted { $0.seconds < $1.seconds }
+    }
+
     func departures(stopId: String, routeIds: [String]) -> [Departure] {
         routeIds.map { rid in
             let t = arrivals(routeId: rid, stopId: stopId, count: 2)
