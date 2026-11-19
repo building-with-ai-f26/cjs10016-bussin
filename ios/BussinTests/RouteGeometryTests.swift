@@ -42,6 +42,55 @@ final class RouteGeometryTests: XCTestCase {
         XCTAssertEqual(proj.offsetMeters, 10, accuracy: 5)
     }
 
+    // MARK: - The stretch you ride (trip highlight, Go mode)
+
+    private func squareGeometry() throws -> RouteGeometry {
+        let r = squareRoute()
+        let stops = [
+            "s1": ShuttleStop(id: "s1", name: "Start", coordinate: r.coordinates[0], routeIds: ["T"]),
+            "s2": ShuttleStop(id: "s2", name: "Half", coordinate: r.coordinates[2], routeIds: ["T"]),
+        ]
+        return try XCTUnwrap(RouteGeometry.build(route: r, stops: stops))
+    }
+
+    /// Straight-line meters. (Walk.meters adds a 25% street detour, which is wrong for a bus line.)
+    private func gap(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> Double {
+        Walk.meters(a, b) / Walk.detour
+    }
+
+    private func assertNear(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D, within meters: Double = 5,
+                            file: StaticString = #filePath, line: UInt = #line) {
+        XCTAssertLessThan(gap(a, b), meters, file: file, line: line)
+    }
+
+    func testAStretchFollowsTheLineAroundACorner() throws {
+        let g = try squareGeometry()
+        // 500 m up the first (north) leg, around the corner, 500 m along the second (east) leg.
+        let pts = g.coordinates(from: 500, along: 1000)
+        assertNear(try XCTUnwrap(pts.first), g.pointCoordinate(at: 500))
+        assertNear(try XCTUnwrap(pts.last), g.pointCoordinate(at: 1500))
+        XCTAssertTrue(pts.contains { gap($0, g.pointCoordinate(at: 1000)) < 5 }, "keeps the corner")
+        XCTAssertFalse(pts.contains { gap($0, g.pointCoordinate(at: 2500)) < 5 }, "stops where the ride ends")
+    }
+
+    func testAStretchOnALoopWrapsThroughTheStart() throws {
+        let g = try squareGeometry()
+        // Board 500 m before the end of the loop and ride 1000 m: through the start, 500 m up the first leg.
+        let pts = g.coordinates(from: 3500, along: 1000)
+        assertNear(try XCTUnwrap(pts.first), g.pointCoordinate(at: 3500))
+        assertNear(try XCTUnwrap(pts.last), g.pointCoordinate(at: 500))
+        XCTAssertTrue(pts.contains { gap($0, g.pointCoordinate(at: 0)) < 5 }, "passes the loop's start")
+        let walked = zip(pts, pts.dropFirst()).reduce(0) { $0 + gap($1.0, $1.1) }
+        XCTAssertEqual(walked, 1000, accuracy: 15, "the drawn line is as long as the ride")
+    }
+
+    func testAZeroLengthStretchIsStillDrawable() throws {
+        let g = try squareGeometry()
+        let pts = g.coordinates(from: 700, along: 0)
+        XCTAssertGreaterThanOrEqual(pts.count, 2)
+        assertNear(pts[0], g.pointCoordinate(at: 700))
+    }
+
     func testRealRoutesBuildAndOrderStops() throws {
         let payload = try JSONDecoder().decode(PassioStopsPayload.self, from: fixture("stops"))
         let catalog = ShuttleCatalog.from(payload: payload)

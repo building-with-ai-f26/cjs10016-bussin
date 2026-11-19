@@ -113,6 +113,24 @@ final class TripPlannerTests: XCTestCase {
                                  "rides through the start of the loop instead of going all the way round")
     }
 
+    func testAnOptionRemembersExactlyWhereOnTheRouteYouRide() throws {
+        let w = try world()
+        let (a, g) = try w.route("A")
+        let entries = Array(g.stopDistances.dropLast())
+        let board = try XCTUnwrap(entries.last), alight = entries[0]       // rides through the loop's start
+        let planner = TripPlanner(geometries: w.gs, stops: w.stops,
+                                  buses: [bus(1, a.id, at: board.distance - 400, g: g)])
+        let o = try XCTUnwrap(planner.bestOption(routeId: a.id,
+                                                 from: try w.coord(board.stopId), to: try w.coord(alight.stopId)))
+        XCTAssertEqual(o.boardDistance, board.distance, accuracy: 1)
+        var expected = alight.distance - board.distance
+        if expected < 0 { expected += g.length }
+        XCTAssertEqual(o.rideMeters, expected, accuracy: 1)
+        let end = (o.boardDistance + o.rideMeters).truncatingRemainder(dividingBy: g.length)
+        XCTAssertLessThan(Walk.meters(g.pointCoordinate(at: end), try w.coord(alight.stopId)), 60,
+                          "the ride ends at the stop you get off at")
+    }
+
     func testFarAwayPlaceIsTooFar() throws {
         let w = try world()
         let t = try longRide(w)
