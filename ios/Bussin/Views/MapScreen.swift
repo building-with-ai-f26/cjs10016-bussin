@@ -12,6 +12,7 @@ struct MapScreen: View {
     @State private var saved = SavedPlaces()
     @State private var walks = WalkTimes()
     @State private var tripSelection: TripPlanner.Option?
+    @State private var tripFrom: Destination?
     @State private var camera: MapCameraPosition = .region(MapScreen.nyu)
     @State private var detent: PresentationDetent = SheetHost.medium
     @State private var go = GoTrip()
@@ -145,16 +146,22 @@ struct MapScreen: View {
         .sheet(isPresented: $sheetShown) {
             SheetHost(store: store, path: $path, userCoordinate: location.coordinate,
                       locationDenied: location.isDenied,
-                      saved: saved, walks: walks, tripSelection: $tripSelection, go: go, detent: $detent)
+                      saved: saved, walks: walks, tripSelection: $tripSelection, tripFrom: $tripFrom, go: go, detent: $detent)
         }
         .onChange(of: path) { old, new in
             withAnimation(.easeInOut(duration: 0.5)) { camera = cameraForFocus() }
+            // A different trip, or none, starts from the rider's own location again. Going into Go keeps it.
+            if Self.trip(in: new) != Self.trip(in: old), new.last != .go { tripFrom = nil }
             // A saved place opened from Home. (Search results report themselves in SearchView.)
             if case .trip(let d)? = new.last, old.isEmpty {
                 Analytics.capture("place_selected", ["source": saved.source(of: d).rawValue])
             }
             // Count forward navigation only, not going back.
             if new.count >= old.count, let place = new.last { Analytics.viewed(place, store: store) }
+        }
+        .onChange(of: tripFrom) { _, _ in
+            guard case .trip = focus else { return }
+            withAnimation(.easeInOut(duration: 0.5)) { camera = cameraForFocus() }
         }
         .onChange(of: tripSelection?.id) { _, _ in
             // Re-frame when the rider picks another option.
@@ -243,7 +250,12 @@ struct MapScreen: View {
     }
     #endif
 
-    private var tripOrigin: CLLocationCoordinate2D { location.coordinate ?? TripView.hub }
+    private static func trip(in path: [Place]) -> Destination? {
+        for p in path { if case .trip(let d) = p { return d } }
+        return nil
+    }
+
+    private var tripOrigin: CLLocationCoordinate2D { tripFrom?.coordinate ?? location.coordinate ?? TripView.hub }
 
     /// Dotted walking lines: to the stop and from the stop, or straight there if walking.
     /// Each follows real streets once Apple Maps has answered, and is a straight line until then.

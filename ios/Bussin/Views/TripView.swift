@@ -8,16 +8,27 @@ struct TripView: View {
     let walks: WalkTimes
     let destination: Destination
     let userCoordinate: CLLocationCoordinate2D?
+    /// Where the trip starts, if not where you are. Nil means "My location".
+    @Binding var from: Destination?
     @Binding var selection: TripPlanner.Option?
     let go: GoTrip
     let onGo: () -> Void
     @State private var reported = false
     @State private var choseWalk = false
     @State private var choseShuttle = false
+    @State private var pickingFrom = false
 
     /// 715 Broadway stands in until location arrives (PRODUCT.md).
     static let hub = CLLocationCoordinate2D(latitude: 40.72927, longitude: -73.99394)
-    private var origin: CLLocationCoordinate2D { userCoordinate ?? Self.hub }
+    private var origin: CLLocationCoordinate2D { from?.coordinate ?? userCoordinate ?? Self.hub }
+
+    /// Go follows you live, so it only makes sense once you're at the trip's starting point.
+    static let goReadyMeters = 200.0
+    static func goReady(from: Destination?, me: CLLocationCoordinate2D?) -> Bool {
+        guard let me else { return false }
+        guard let from else { return true }
+        return Walk.meters(me, from.coordinate) / Walk.detour <= goReadyMeters
+    }
     private var plan: TripPlanner.Plan {
         store.planner.plan(from: origin, to: destination.coordinate, walks: { walks.leg($0, $1) })
     }
@@ -47,9 +58,12 @@ struct TripView: View {
     var body: some View {
         let plan = plan
         List {
-            if userCoordinate == nil {
-                Text("Location is off, so this starts from 715 Broadway.")
-                    .font(.footnote).foregroundStyle(Color.secondary)
+            Section {
+                Button { pickingFrom = true } label: { fromRow }
+                if from == nil, userCoordinate == nil {
+                    Text("Location is off, so this starts from 715 Broadway.")
+                        .font(.footnote).foregroundStyle(Color.secondary)
+                }
             }
             // Walking first when it's faster; the shuttle stays right below for anyone who'd rather ride.
             let walkFirst = plan.verdict == .walk && !plan.options.isEmpty
@@ -67,6 +81,32 @@ struct TripView: View {
         .scrollContentBackground(.hidden)
         .navigationTitle(destination.name)
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $pickingFrom) {
+            NavigationStack {
+                SearchView(saved: saved, path: .constant([]), onPick: { d, source in
+                    from = d
+                    pickingFrom = false
+                    Analytics.capture("trip_origin_changed", ["source": source.rawValue])
+                }, title: "Starting from")
+                .safeAreaInset(edge: .top) {
+                    if from != nil {
+                        Button {
+                            from = nil
+                            pickingFrom = false
+                            Analytics.capture("trip_origin_changed", ["source": "my_location"])
+                        } label: {
+                            Label("My location", systemImage: "location.fill")
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.horizontal, 20).padding(.vertical, 12)
+                    }
+                }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) { Button("Cancel") { pickingFrom = false } }
+                }
+            }
+            .presentationDetents([.large])
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
@@ -121,8 +161,7 @@ struct TripView: View {
         Section(title) {
             if plan.verdict == .tooFar {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(plan.idleRouteIds.isEmpty ? "The shuttles don't go near there"
-                                                  : "No shuttle is running there right now").font(.headline)
+                    Text(tooFarTitle(plan)).font(.headline)
                     Text("It's about \(Fmt.distance(plan.walkMeters)) away.")
                         .font(.subheadline).foregroundStyle(.secondary)
                 }
@@ -162,9 +201,49 @@ struct TripView: View {
         Label("Walk \(Fmt.minutes(o.walkFromStop)) to \(destination.name)", systemImage: "figure.walk")
     }
 
+    /// Why there's no shuttle. When a running route does stop near the place, the trouble is the
+    /// start: say so, instead of claiming the shuttles don't go there.
+    private func tooFarTitle(_ plan: TripPlanner.Plan) -> String {
+        let runningNearPlace = Set(store.stops
+            .filter { Walk.seconds($0.coordinate, destination.coordinate) < TripPlanner.nearDestination }
+            .flatMap { store.runningRouteIds(at: $0) })
+            .compactMap { store.route(for: $0)?.name }.sorted()
+        if let first = runningNearPlace.first {
+            let start = from?.name ?? (userCoordinate == nil ? "715 Broadway" : "you")
+            let names = runningNearPlace.count == 1 ? first : runningNearPlace.joined(separator: " and ")
+            return "\(names) \(runningNearPlace.count == 1 ? "goes" : "go") there, but no stop is close to \(start)"
+        }
+        return plan.idleRouteIds.isEmpty ? "The shuttles don't go near there" : "No shuttle is running there right now"
+    }
+
+    /// "From  My location" at the top of the trip, tap to change it.
+    private var fromRow: some View {
+        HStack(spacing: 12) {
+            Text("From").foregroundStyle(Color.secondary)
+            Image(systemName: from == nil ? "location.fill" : "mappin.circle.fill")
+                .foregroundStyle(from == nil ? Color.blue : Color.red)
+            Text(from?.name ?? (userCoordinate == nil ? "715 Broadway" : "My location"))
+                .foregroundStyle(Color.primary).lineLimit(1)
+            Spacer()
+            Text("Change").font(.subheadline).foregroundStyle(Color.blue)
+        }
+        .frame(minHeight: RowMetrics.minHeight)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Choose where this trip starts")
+    }
+
     /// Go follows this trip live. It needs your location to know when you've boarded.
     @ViewBuilder
     private func goButton(_ o: TripPlanner.Option) -> some View {
+        if !Self.goReady(from: from, me: userCoordinate), let from, userCoordinate != nil {
+            Text("Go appears once you're at \(from.name).").font(.footnote).foregroundStyle(Color.secondary)
+        } else {
+            goButtonReady(o)
+        }
+    }
+
+    @ViewBuilder
+    private func goButtonReady(_ o: TripPlanner.Option) -> some View {
         Button {
             if go.isRunning { go.end(outcome: "replaced") }
             if go.start(option: o, to: destination, store: store, me: userCoordinate) { onGo() }

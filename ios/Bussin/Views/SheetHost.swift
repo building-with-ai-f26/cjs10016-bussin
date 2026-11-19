@@ -10,6 +10,8 @@ struct SheetHost: View {
     let saved: SavedPlaces
     let walks: WalkTimes
     @Binding var tripSelection: TripPlanner.Option?
+    /// Where a trip starts, when the rider picked somewhere other than their own location.
+    @Binding var tripFrom: Destination?
     let go: GoTrip
 
     static let peek = PresentationDetent.height(140)
@@ -27,7 +29,7 @@ struct SheetHost: View {
                     case .bus(let id): BusView(store: store, busId: id)
                     case .search: SearchView(saved: saved, path: $path)
                     case .trip(let d): TripView(store: store, saved: saved, walks: walks, destination: d,
-                                                userCoordinate: userCoordinate, selection: $tripSelection,
+                                                userCoordinate: userCoordinate, from: $tripFrom, selection: $tripSelection,
                                                 go: go, onGo: { path = [.go] })
                     case .go: GoView(store: store, go: go, path: $path)
                     }
