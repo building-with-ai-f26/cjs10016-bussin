@@ -131,6 +131,21 @@ final class TripPlannerTests: XCTestCase {
                           "the ride ends at the stop you get off at")
     }
 
+    func testAnOptionRemembersWhichBusItCountsOn() throws {
+        let w = try world()
+        let (a, g) = try w.route("A")
+        let entries = Array(g.stopDistances.dropLast())
+        let board = entries[1], alight = entries[3]
+        // Bus 7 is just short of the stop and will beat you there; bus 8 is a long way back.
+        let planner = TripPlanner(geometries: w.gs, stops: w.stops, buses: [
+            bus(7, a.id, at: board.distance - 2000, g: g),
+            bus(8, a.id, at: board.distance - 6000, g: g),
+        ])
+        let o = try XCTUnwrap(planner.bestOption(routeId: a.id,
+                                                 from: try w.coord(board.stopId), to: try w.coord(alight.stopId)))
+        XCTAssertEqual(o.busId, 7)
+    }
+
     func testFarAwayPlaceIsTooFar() throws {
         let w = try world()
         let t = try longRide(w)

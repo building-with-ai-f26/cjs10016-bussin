@@ -59,6 +59,8 @@ struct TripPlanner {
         /// The map uses these to highlight exactly the stretch you ride; Go mode counts stops with them.
         var boardDistance = 0.0
         var rideMeters = 0.0
+        /// The bus this plan counts on catching. Go mode follows it.
+        var busId: Int?
         var id: String { routeId }
     }
 
@@ -141,7 +143,7 @@ struct TripPlanner {
                                   total: total, stopCount: j > i ? j - i : j - i + entries.count,
                                   isEstimate: true,
                                   busAtStopNow: busWaiting(rbuses, at: b.distance, on: g, walk: w1),
-                                  boardDistance: b.distance, rideMeters: rideMeters)
+                                  boardDistance: b.distance, rideMeters: rideMeters, busId: caught.busId)
                     bestBoardDistance = b.distance
                     bestRideMeters = rideMeters
                 }
@@ -163,7 +165,7 @@ struct TripPlanner {
                       total: caught.time + ride + w2, stopCount: pick.stopCount,
                       isEstimate: real1 == nil || real2 == nil,
                       busAtStopNow: busWaiting(rbuses, at: bestBoardDistance, on: g, walk: w1),
-                      boardDistance: bestBoardDistance, rideMeters: bestRideMeters)
+                      boardDistance: bestBoardDistance, rideMeters: bestRideMeters, busId: caught.busId)
     }
 
     /// Metres the bus still has to drive to reach `distance`, and whether it is sitting at that stop.
@@ -186,13 +188,13 @@ struct TripPlanner {
     /// stop can be boarded only if the rider is basically there; nobody knows when it will pull out,
     /// so from further away the promise is that bus's next lap. On a loop, later laps count too.
     private func firstCatchable(_ rbuses: [TrackedBus], at distance: Double, on g: RouteGeometry,
-                                walk: Double) -> (time: Double, speed: Double)? {
+                                walk: Double) -> (time: Double, speed: Double, busId: Int)? {
         let notBefore = walk + Self.boardingBuffer
-        var best: (time: Double, speed: Double)?
+        var best: (time: Double, speed: Double, busId: Int)?
         for bus in rbuses {
             let (gap, atStop) = approach(bus, to: distance, on: g)
             if atStop && walk <= Self.alreadyThere {
-                if best == nil || walk < best!.time { best = (walk, bus.speed) }
+                if best == nil || walk < best!.time { best = (walk, bus.speed, bus.id) }
                 continue
             }
             // A waiting bus is gone by the time you arrive, so start from its next lap.
@@ -202,7 +204,7 @@ struct TripPlanner {
             for lap in firstLap...lastLap {
                 let t = (gap + Double(lap) * g.length) / bus.speed
                 if t >= notBefore {
-                    if best == nil || t < best!.time { best = (t, bus.speed) }
+                    if best == nil || t < best!.time { best = (t, bus.speed, bus.id) }
                     break
                 }
             }
