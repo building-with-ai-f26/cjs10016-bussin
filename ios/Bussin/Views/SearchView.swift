@@ -4,6 +4,10 @@ import MapKit
 struct SearchView: View {
     let saved: SavedPlaces
     @Binding var path: [Place]
+    /// Set when choosing a trip's starting point instead of a destination: the pick goes here,
+    /// and nothing is added to recents.
+    var onPick: ((Destination, Analytics.PlaceSource) -> Void)? = nil
+    var title = "Where to?"
     @State private var search = PlaceSearch()
     @State private var resolving = false
     @State private var lookupFailed = false
@@ -45,7 +49,7 @@ struct SearchView: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .navigationTitle("Where to?")
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             focused = true
@@ -74,6 +78,7 @@ struct SearchView: View {
 
     /// Replace the search screen with the answer, so Back goes home.
     private func open(_ d: Destination, from source: Analytics.PlaceSource) {
+        if let onPick { onPick(d, source); return }
         Analytics.capture("place_selected", ["source": source.rawValue])
         saved.noteSearched(d)
         path = [.trip(d)]

@@ -146,6 +146,17 @@ final class TripPlannerTests: XCTestCase {
         XCTAssertEqual(o.busId, 7)
     }
 
+    @MainActor
+    func testGoWaitsUntilYoureAtTheStartingPoint() {
+        let home = Destination(name: "Home", subtitle: "", latitude: 40.7300, longitude: -73.9950)
+        let here = CLLocationCoordinate2D(latitude: 40.7300, longitude: -73.9950)
+        let fiveBlocksAway = CLLocationCoordinate2D(latitude: 40.7345, longitude: -73.9950)
+        XCTAssertTrue(TripView.goReady(from: nil, me: here), "starting from your own location: always ready")
+        XCTAssertTrue(TripView.goReady(from: home, me: here))
+        XCTAssertFalse(TripView.goReady(from: home, me: fiveBlocksAway), "500 m away: not yet")
+        XCTAssertFalse(TripView.goReady(from: nil, me: nil), "no location: Go can't follow you")
+    }
+
     func testFarAwayPlaceIsTooFar() throws {
         let w = try world()
         let t = try longRide(w)
