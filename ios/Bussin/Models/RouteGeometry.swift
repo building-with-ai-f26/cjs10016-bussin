@@ -89,6 +89,50 @@ struct RouteGeometry {
         return Projection(distanceAlong: bestD, offsetMeters: bestOff)
     }
 
+    /// Every place on the line a point could belong to, nearest first. Where a route runs up a
+    /// street and back down it, a bus between the two lanes matches both, and only its movement
+    /// says which one it's on. Matches within `slack` meters of the nearest count; matches closer
+    /// than 150 m along the line are the same place.
+    func projections(_ c: CLLocationCoordinate2D, slack: Double = 30) -> [Projection] {
+        let p = SIMD2((c.longitude - originLon) * mPerDegLon, (c.latitude - originLat) * Self.mPerDegLat)
+        var all: [Projection] = []
+        for i in 1..<points.count {
+            let a = points[i - 1], b = points[i]
+            let seg = cumulative[i] - cumulative[i - 1]
+            let t = seg == 0 ? 0 : max(0, min(1, simd_dot(p - a, b - a) / (seg * seg)))
+            all.append(Projection(distanceAlong: cumulative[i - 1] + seg * t, offsetMeters: simd_distance(p, a + (b - a) * t)))
+        }
+        all.sort { $0.offsetMeters < $1.offsetMeters }
+        guard let best = all.first else { return [] }
+        var kept: [Projection] = []
+        for q in all where q.offsetMeters <= best.offsetMeters + slack {
+            if !kept.contains(where: { along($0.distanceAlong, q.distanceAlong) < 150 }) { kept.append(q) }
+        }
+        return kept
+    }
+
+    /// Meters between two places on the line, going whichever way is shorter on a loop.
+    func along(_ a: Double, _ b: Double) -> Double {
+        let d = abs(a - b)
+        return isLoop ? min(d, length - d) : d
+    }
+
+    /// Which way the route runs at a distance along it, in degrees clockwise from north.
+    /// Measured across 20 m, so tiny kinks in the drawn line don't twist the arrow.
+    func direction(at distance: Double) -> Double {
+        let from = isLoop ? wrapped(distance - 10) : max(0, min(length - 20, distance - 10))
+        let to = isLoop ? wrapped(from + 20) : min(length, from + 20)
+        return Self.bearing(pointCoordinate(at: from), pointCoordinate(at: to))
+    }
+
+    /// Compass bearing from a to b, degrees clockwise from north.
+    static func bearing(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> Double {
+        let dx = (b.longitude - a.longitude) * cos(a.latitude * .pi / 180)
+        let dy = b.latitude - a.latitude
+        let deg = atan2(dx, dy) * 180 / .pi
+        return deg < 0 ? deg + 360 : deg
+    }
+
     /// The stretch of line that starts `start` meters along and runs `meters` forward, as map
     /// points: the part of a route a rider actually rides. On a loop it wraps through the start;
     /// a one-way line stops at its end. Always at least two points, so it can be drawn.
