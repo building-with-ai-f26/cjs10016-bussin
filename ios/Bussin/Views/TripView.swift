@@ -55,14 +55,15 @@ struct TripView: View {
                     ForEach(plan.options) { o in
                         Button { choseWalk = false; selection = o; Analytics.capture("trip_option_selected", ["choice": "shuttle"]) } label: { optionRow(o) }
                             .listRowBackground(selection?.id == o.id ? Color.blue.opacity(0.12) : nil)
-                        // Go sits right under the chosen option, so it's on screen at half height.
-                        if selection?.id == o.id { goButton(o) }
                         if o.busAtStopNow {
                             Label("A bus is at \(store.stop(o.boardStopId)?.name ?? "the stop") right now. You're \(Fmt.minutes(o.walkToStop)) away, so it may leave without you. The time above is the next one.",
                                   systemImage: "figure.run")
                                 .font(.footnote).foregroundStyle(Color.secondary)
                         }
-                        if selection?.id == o.id { steps(o) }
+                        if selection?.id == o.id {
+                            steps(o)
+                            goButton(o)     // after the directions, so you read them first
+                        }
                     }
                 }
             }
@@ -145,9 +146,9 @@ struct TripView: View {
             if go.isRunning { go.end(outcome: "replaced") }
             if go.start(option: o, to: destination, store: store, me: userCoordinate) { onGo() }
         } label: {
-            Label("Go", systemImage: "location.north.line.fill")
+            Text("Go")
                 .font(.headline)
-                .frame(maxWidth: .infinity, minHeight: 32)
+                .frame(maxWidth: .infinity, minHeight: 32, alignment: .center)
         }
         .buttonStyle(.borderedProminent)
         .disabled(userCoordinate == nil)
