@@ -15,6 +15,7 @@ struct MapScreen: View {
     @State private var camera: MapCameraPosition = .region(MapScreen.nyu)
     @State private var detent: PresentationDetent = SheetHost.medium
     @State private var go = GoTrip()
+    @State private var mapHeading = 0.0     // degrees the map is turned; the facing beam turns with it
 
     /// Where every shuttle route runs: the Manhattan stretch of all seven, from the Village and
     /// Tribeca up the East Side to Langone. Route A's tail to MetroTech in Brooklyn is left out on
@@ -103,12 +104,26 @@ struct MapScreen: View {
                 Marker(d.name, coordinate: d.coordinate).tint(.red)
             }
             if case .go = focus, let d = go.destination {
+                // The walks still ahead of you, dotted like on the trip screen.
+                ForEach(Array(goWalkLegs.enumerated()), id: \.offset) { _, leg in
+                    MapPolyline(coordinates: leg)
+                        .stroke(Color.primary, style: StrokeStyle(lineWidth: 4, lineCap: .round, dash: [0.1, 8]))
+                }
                 Marker(d.name, coordinate: d.coordinate).tint(.red)
+            }
+
+            // Which way you're facing, as a beam from your blue dot, while Go runs.
+            if case .go = focus, let me = go.lastLocation, let facing = location.heading {
+                Annotation("", coordinate: me, anchor: .center) {
+                    HeadingBeam().rotationEffect(.degrees(facing - mapHeading))
+                }
+                .annotationTitles(.hidden)
             }
 
             UserAnnotation()
         }
         .mapStyle(.standard(pointsOfInterest: .excludingAll))
+        .onMapCameraChange { mapHeading = $0.camera.heading }
         // Tapping the map itself shrinks the panel out of the way. A tap on a stop or bus opens it
         // instead: the map hears that tap too, so skip anything on or right next to a marker.
         .onTapGesture { point in
@@ -238,6 +253,15 @@ struct MapScreen: View {
         return ends.map { walks.path($0.0, $0.1) ?? [$0.0, $0.1] }
     }
 
+    /// During Go: the walk to the stop until you're aboard, then the walk from your stop to the place.
+    private var goWalkLegs: [[CLLocationCoordinate2D]] {
+        guard let s = go.session, !s.isOver else { return [] }
+        var ends: [(CLLocationCoordinate2D, CLLocationCoordinate2D)] = []
+        if s.step == .toStop || s.step == .atStop, let start = go.startLocation { ends.append((start, s.boardStop)) }
+        ends.append((s.alightStop, s.destination))
+        return ends.map { walks.path($0.0, $0.1) ?? [$0.0, $0.1] }
+    }
+
     /// Changes whenever the open bus reports a new position.
     private var followedBusPosition: String {
         guard case .bus(let id) = focus,
@@ -317,8 +341,13 @@ struct MapScreen: View {
             }
             return .region(regionAbovePanel(fitting: pts))
         case .go:
-            // Centered on you, above the panel. Without a location yet, show the whole trip.
-            if let me = go.lastLocation { return .region(regionAbovePanel(fitting: [me], minSpan: 0.008)) }
+            // You and the next place you're heading (your stop, then the place), above the panel,
+            // so the dotted walk ahead stays in view. Without a location yet, show the whole trip.
+            if let me = go.lastLocation, let s = go.session {
+                let next = s.step == .toStop || s.step == .atStop ? s.boardStop
+                         : s.isAboard ? s.alightStop : s.destination
+                return .region(regionAbovePanel(fitting: [me, next], minSpan: 0.006))
+            }
             let pts = go.session.map { [$0.boardStop, $0.alightStop, $0.destination] } ?? []
             return .region(regionAbovePanel(fitting: pts))
         case .search, nil:
@@ -346,6 +375,31 @@ struct MapScreen: View {
         let center = CLLocationCoordinate2D(latitude: (minLat + maxLat) / 2 - latSpan / 4,
                                             longitude: (minLon + maxLon) / 2)
         return MKCoordinateRegion(center: center, span: span)
+    }
+}
+
+/// A soft blue beam pointing up (north before rotation), like the one Apple Maps draws from your dot.
+private struct HeadingBeam: View {
+    var body: some View {
+        Wedge(spread: 50)
+            .fill(RadialGradient(colors: [Color.blue.opacity(0.55), Color.blue.opacity(0)],
+                                 center: .center, startRadius: 4, endRadius: 40))
+            .frame(width: 80, height: 80)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+}
+
+private struct Wedge: Shape {
+    let spread: Double      // degrees
+    func path(in rect: CGRect) -> Path {
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        var p = Path()
+        p.move(to: c)
+        p.addArc(center: c, radius: rect.width / 2,
+                 startAngle: .degrees(-90 - spread / 2), endAngle: .degrees(-90 + spread / 2), clockwise: false)
+        p.closeSubpath()
+        return p
     }
 }
 

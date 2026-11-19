@@ -75,7 +75,9 @@ enum Analytics {
     /// What the planner answered. Records the route and stops, never the searched address.
     @MainActor
     static func planned(_ plan: TripPlanner.Plan, store: ShuttleStore) {
-        if let o = plan.options.first {
+        // trip_planned means the shuttle was the recommendation. A slower shuttle offered as an
+        // alternative still counts as no_good_option, so the dashboard's shuttle-vs-walk split holds.
+        if plan.verdict == .shuttle, let o = plan.options.first {
             capture("trip_planned", [
                 "route": store.route(for: o.routeId)?.letter ?? o.routeId,
                 "board_stop": store.stop(o.boardStopId)?.name ?? o.boardStopId,
@@ -87,6 +89,7 @@ enum Analytics {
             capture("no_good_option", [
                 "walk_minutes": Int((plan.walkSeconds / 60).rounded()),
                 "too_far": plan.verdict == .tooFar,
+                "slower_shuttle_minutes": plan.options.first.map { Int((($0.total - plan.walkSeconds) / 60).rounded()) } ?? -1,
             ])
         }
     }
