@@ -198,7 +198,7 @@ struct HomeView: View {
     /// A quick straight-line answer, so it says "about". The trip screen has Apple's real walking times.
     private func summary(for d: Destination) -> String {
         let plan = store.planner.plan(from: userCoordinate ?? TripView.hub, to: d.coordinate)
-        if let o = plan.options.first, let r = store.route(for: o.routeId) {
+        if plan.verdict == .shuttle, let o = plan.options.first, let r = store.route(for: o.routeId) {
             return "\(r.name) · about \(Fmt.minutes(o.total))"
         }
         return plan.verdict == .tooFar ? "No shuttle goes there" : "Walk about \(Fmt.minutes(plan.walkSeconds))"

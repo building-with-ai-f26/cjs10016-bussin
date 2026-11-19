@@ -236,6 +236,46 @@ final class TripPlannerTests: XCTestCase {
         XCTAssertTrue(plan.isEstimate, "the whole-way walk is still a guess")
     }
 
+    // MARK: - A slower shuttle is still worth offering (cold, rain, bags)
+
+    /// The long ride, with Apple's whole-way walk set to `walkSeconds` and every other leg left to estimates.
+    private func longRidePlan(_ w: World, busBehind: Double = 400,
+                              wholeWalk: (Double) -> Double) throws -> (plan: TripPlanner.Plan, shuttle: Double) {
+        let t = try longRide(w)
+        let planner = TripPlanner(geometries: w.gs, stops: w.stops,
+                                  buses: [bus(1, t.route.id, at: t.board.distance - busBehind, g: t.g)])
+        let from = try w.coord(t.board.stopId), to = try w.coord(t.alight.stopId)
+        let shuttle = try XCTUnwrap(planner.bestOption(routeId: t.route.id, from: from, to: to)).total
+        let whole = wholeWalk(shuttle)
+        let walks: WalkLookup = { a, b in
+            a.latitude == from.latitude && a.longitude == from.longitude
+                && b.latitude == to.latitude && b.longitude == to.longitude
+                ? WalkLeg(seconds: whole, meters: whole * Walk.metersPerSecond) : nil
+        }
+        return (planner.plan(from: from, to: to, walks: walks), shuttle)
+    }
+
+    func testAShuttleALittleSlowerThanWalkingIsStillOffered() throws {
+        let (plan, shuttle) = try longRidePlan(try world()) { $0 - 5 * 60 }     // walking wins by 5 minutes
+        XCTAssertGreaterThanOrEqual(plan.walkSeconds, TripPlanner.slowerShuttleNeedsWalk, "fixture check")
+        XCTAssertEqual(try XCTUnwrap(plan.options.first).total, shuttle, accuracy: 1)
+        XCTAssertEqual(plan.verdict, .walk, "walking is still the recommendation")
+    }
+
+    func testAShuttleMuchSlowerThanWalkingIsLeftOut() throws {
+        // The bus is 4 km back, so the shuttle trip is long enough for a 10+ minute walk to beat it by 15.
+        let (plan, _) = try longRidePlan(try world(), busBehind: 4000) { $0 - 15 * 60 }
+        XCTAssertGreaterThanOrEqual(plan.walkSeconds, TripPlanner.slowerShuttleNeedsWalk, "fixture check")
+        XCTAssertTrue(plan.options.isEmpty)
+        XCTAssertEqual(plan.verdict, .walk)
+    }
+
+    func testAFasterShuttleIsStillTheRecommendation() throws {
+        let (plan, _) = try longRidePlan(try world()) { $0 + 5 * 60 }           // the shuttle wins by 5 minutes
+        XCTAssertFalse(plan.options.isEmpty)
+        XCTAssertEqual(plan.verdict, .shuttle)
+    }
+
     func testARealWalkThatBeatsTheShuttleDropsIt() throws {
         let w = try world()
         let t = try longRide(w)

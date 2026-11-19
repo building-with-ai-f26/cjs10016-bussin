@@ -31,7 +31,12 @@ struct TripPlanner {
     static let maxWalkToStop = 12 * 60.0      // won't send you further than this to board
     static let maxWalkFromStop = 20 * 60.0    // or further than this after getting off
     static let boardingBuffer = 30.0          // be at the stop this long before the bus
-    static let mustBeatWalkingBy = 60.0       // a shuttle that saves under a minute isn't worth it
+    static let mustBeatWalkingBy = 60.0       // to be the recommendation, a shuttle must save at least a minute
+    /// A shuttle can still be offered when it's this much slower than walking: people ride to stay
+    /// warm or dry, or to skip a long walk with bags. Walking stays the recommendation.
+    static let maxSlowerThanWalking = 10 * 60.0
+    /// ...but only on walks at least this long. Nobody waits for a bus to skip a 5-minute walk.
+    static let slowerShuttleNeedsWalk = 10 * 60.0
     static let tooFarToWalk = 45 * 60.0
     static let nearDestination = 5 * 60.0     // "also stops near here" radius
     static let atStopMeters = 40.0            // a bus this close to the stop marker is "at the stop"
@@ -91,8 +96,13 @@ struct TripPlanner {
         let running = Set(buses.map(\.bus.routeId))
         let options = running.sorted()
             .compactMap { bestOption(routeId: $0, from: origin, to: dest, walks: walks) }
-            // A shuttle has to beat walking, unless the walk is so long that a slow shuttle is still the sane choice.
-            .filter { ($0.total < walk - Self.mustBeatWalkingBy || walk > Self.tooFarToWalk) && $0.walkFromStop < walk }
+            // Offer a shuttle that beats walking, any shuttle when the walk is too long to suggest,
+            // and on a real walk, one that's at most 10 minutes slower (cold, rain, bags).
+            .filter {
+                let beatsWalking = $0.total < walk - Self.mustBeatWalkingBy
+                let slowButFair = walk >= Self.slowerShuttleNeedsWalk && $0.total <= walk + Self.maxSlowerThanWalking
+                return (beatsWalking || slowButFair || walk > Self.tooFarToWalk) && $0.walkFromStop < walk
+            }
             .sorted { $0.total < $1.total }
             .prefix(3)
 
@@ -102,7 +112,12 @@ struct TripPlanner {
             .filter { geometries[$0] != nil && !running.contains($0) }
             .sorted()
 
-        let verdict: Verdict = !options.isEmpty ? .shuttle : (walk > Self.tooFarToWalk ? .tooFar : .walk)
+        // The recommendation: the shuttle only if it really is the better way (or the walk is too long).
+        let best = options.first
+        let verdict: Verdict
+        if let best, best.total < walk - Self.mustBeatWalkingBy || walk > Self.tooFarToWalk { verdict = .shuttle }
+        else if best == nil, walk > Self.tooFarToWalk { verdict = .tooFar }
+        else { verdict = .walk }
         return Plan(options: Array(options), walkSeconds: walk,
                     walkMeters: realWalk?.meters ?? Walk.meters(origin, dest),
                     verdict: verdict, idleRouteIds: idle,

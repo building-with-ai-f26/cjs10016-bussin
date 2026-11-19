@@ -13,6 +13,7 @@ struct TripView: View {
     let onGo: () -> Void
     @State private var reported = false
     @State private var choseWalk = false
+    @State private var choseShuttle = false
 
     /// 715 Broadway stands in until location arrives (PRODUCT.md).
     static let hub = CLLocationCoordinate2D(latitude: 40.72927, longitude: -73.99394)
@@ -50,37 +51,11 @@ struct TripView: View {
                 Text("Location is off, so this starts from 715 Broadway.")
                     .font(.footnote).foregroundStyle(Color.secondary)
             }
-            if !plan.options.isEmpty {
-                Section("Shuttle") {
-                    ForEach(plan.options) { o in
-                        Button { choseWalk = false; selection = o; Analytics.capture("trip_option_selected", ["choice": "shuttle"]) } label: { optionRow(o) }
-                            .listRowBackground(selection?.id == o.id ? Color.blue.opacity(0.12) : nil)
-                        if o.busAtStopNow {
-                            Label("A bus is at \(store.stop(o.boardStopId)?.name ?? "the stop") right now. You're \(Fmt.minutes(o.walkToStop)) away, so it may leave without you. The time above is the next one.",
-                                  systemImage: "figure.run")
-                                .font(.footnote).foregroundStyle(Color.secondary)
-                        }
-                        if selection?.id == o.id {
-                            steps(o)
-                            goButton(o)     // after the directions, so you read them first
-                        }
-                    }
-                }
-            }
-            Section(plan.options.isEmpty ? "Best way there" : "Or") {
-                if plan.verdict == .tooFar {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(plan.idleRouteIds.isEmpty ? "The shuttles don't go near there"
-                                                      : "No shuttle is running there right now").font(.headline)
-                        Text("It's about \(Fmt.distance(plan.walkMeters)) away.")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                    }
-                    Button("Get directions in Apple Maps") { openInMaps() }
-                } else {
-                    Button { choseWalk = true; selection = nil; Analytics.capture("trip_option_selected", ["choice": "walk"]) } label: { walkRow(plan) }
-                        .listRowBackground(selection == nil ? Color.blue.opacity(0.12) : nil)
-                }
-            }
+            // Walking first when it's faster; the shuttle stays right below for anyone who'd rather ride.
+            let walkFirst = plan.verdict == .walk && !plan.options.isEmpty
+            if !walkFirst { shuttleSection(plan, title: "Shuttle") }
+            walkSection(plan, title: plan.options.isEmpty || walkFirst ? "Best way there" : "Or")
+            if walkFirst { shuttleSection(plan, title: "Or take the shuttle") }
             if !plan.idleRouteIds.isEmpty {
                 Section {
                     Text(idleNote(plan.idleRouteIds.compactMap { store.route(for: $0)?.name }))
@@ -103,9 +78,12 @@ struct TripView: View {
                 .accessibilityLabel(saved.isFavorite(destination) ? "Remove favorite" : "Add favorite")
             }
         }
-        // Keep the chosen route chosen as times refresh; fall back to the fastest.
+        // Keep the chosen way chosen as times refresh. Otherwise pick the recommendation:
+        // the fastest shuttle, or walking when walking is faster.
         .onChange(of: plan.options, initial: true) { _, new in
-            selection = choseWalk ? nil : (new.first { $0.id == selection?.id } ?? new.first)
+            if choseWalk { selection = nil; return }
+            if let kept = new.first(where: { $0.id == selection?.id }) { selection = kept; return }
+            selection = (choseShuttle || plan.verdict == .shuttle) ? new.first : nil
         }
         .task(id: legsNeeded.map { WalkTimes.key($0.0, $0.1) }) { await walks.fetch(legsNeeded) }
         // Report the answer once the walking times are real, or after 5 seconds if Apple is slow.
@@ -114,12 +92,57 @@ struct TripView: View {
         .onDisappear { selection = nil }
     }
 
-    private func optionRow(_ o: TripPlanner.Option) -> some View {
+    @ViewBuilder
+    private func shuttleSection(_ plan: TripPlanner.Plan, title: String) -> some View {
+        if !plan.options.isEmpty {
+            Section(title) {
+                ForEach(plan.options) { o in
+                    Button {
+                        choseWalk = false; choseShuttle = true; selection = o
+                        Analytics.capture("trip_option_selected", ["choice": "shuttle"])
+                    } label: { optionRow(o, walk: plan.walkSeconds) }
+                        .listRowBackground(selection?.id == o.id ? Color.blue.opacity(0.12) : nil)
+                    if o.busAtStopNow {
+                        Label("A bus is at \(store.stop(o.boardStopId)?.name ?? "the stop") right now. You're \(Fmt.minutes(o.walkToStop)) away, so it may leave without you. The time above is the next one.",
+                              systemImage: "figure.run")
+                            .font(.footnote).foregroundStyle(Color.secondary)
+                    }
+                    if selection?.id == o.id {
+                        steps(o)
+                        goButton(o)     // after the directions, so you read them first
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func walkSection(_ plan: TripPlanner.Plan, title: String) -> some View {
+        Section(title) {
+            if plan.verdict == .tooFar {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(plan.idleRouteIds.isEmpty ? "The shuttles don't go near there"
+                                                  : "No shuttle is running there right now").font(.headline)
+                    Text("It's about \(Fmt.distance(plan.walkMeters)) away.")
+                        .font(.subheadline).foregroundStyle(.secondary)
+                }
+                Button("Get directions in Apple Maps") { openInMaps() }
+            } else {
+                Button {
+                    choseWalk = true; choseShuttle = false; selection = nil
+                    Analytics.capture("trip_option_selected", ["choice": "walk"])
+                } label: { walkRow(plan) }
+                    .listRowBackground(selection == nil ? Color.blue.opacity(0.12) : nil)
+            }
+        }
+    }
+
+    private func optionRow(_ o: TripPlanner.Option, walk: Double) -> some View {
         HStack(spacing: 12) {
             if let r = store.route(for: o.routeId) { RouteBadge(letter: r.letter, colorHex: r.colorHex) }
             VStack(alignment: .leading, spacing: 2) {
                 LiveLabel(text: "Bus in \(Fmt.eta(o.busArrives).lowercased())")
-                Text("Arrive \(Fmt.clock(Date.now.addingTimeInterval(o.total)))")
+                Text("Arrive \(Fmt.clock(Date.now.addingTimeInterval(o.total)))" + slower(o, walk: walk))
                     .font(.footnote).foregroundStyle(Color.secondary)
             }
             Spacer()
@@ -156,6 +179,11 @@ struct TripView: View {
         if userCoordinate == nil {
             Text("Turn on location to use Go.").font(.footnote).foregroundStyle(Color.secondary)
         }
+    }
+
+    /// " · 6 min longer than walking", when it is.
+    private func slower(_ o: TripPlanner.Option, walk: Double) -> String {
+        o.total > walk + 30 ? " · \(Fmt.minutes(o.total - walk)) longer than walking" : ""
     }
 
     private func walkRow(_ plan: TripPlanner.Plan) -> some View {
