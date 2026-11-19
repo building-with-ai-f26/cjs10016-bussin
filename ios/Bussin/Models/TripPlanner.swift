@@ -67,6 +67,8 @@ struct TripPlanner {
         /// The bus this plan counts on catching. Go mode follows it.
         var busId: Int?
         var id: String { routeId }
+        /// How long until you'd need to start walking to the stop to make this bus. Zero means now.
+        var leaveIn: Double { max(0, busArrives - walkToStop - TripPlanner.boardingBuffer) }
     }
 
     enum Verdict { case shuttle, walk, tooFar }
@@ -78,7 +80,14 @@ struct TripPlanner {
         let verdict: Verdict
         let idleRouteIds: [String]      // routes with a stop near the destination but no buses out
         let isEstimate: Bool            // true while any number shown is still a straight-line guess
+        /// Seconds from now you need to be there by, when planning "arrive by". Nil means leave now.
+        var arriveBy: Double? = nil
+        /// Arrive by: how long until you'd have to start walking the whole way. Negative means it's already too late.
+        var walkLeaveIn: Double? { arriveBy.map { $0 - walkSeconds } }
     }
+
+    /// How far ahead "arrive by" looks. Beyond this the live feed can't honestly say which bus you'd catch.
+    static let arriveByHorizon = 75 * 60.0
 
     /// The best pair per running route by estimate, before comparing with walking.
     /// These are the legs worth asking Apple about.
@@ -90,10 +99,14 @@ struct TripPlanner {
     }
 
     func plan(from origin: CLLocationCoordinate2D, to dest: CLLocationCoordinate2D,
-              walks: WalkLookup = { _, _ in nil }) -> Plan {
+              arriveBy: Double? = nil, walks: WalkLookup = { _, _ in nil }) -> Plan {
         let realWalk = walks(origin, dest)
         let walk = realWalk?.seconds ?? Walk.seconds(origin, dest)
         let running = Set(buses.map(\.bus.routeId))
+        if let deadline = arriveBy {
+            return arriveByPlan(from: origin, to: dest, deadline: deadline, walk: walk, realWalk: realWalk,
+                                running: running, walks: walks)
+        }
         let options = running.sorted()
             .compactMap { bestOption(routeId: $0, from: origin, to: dest, walks: walks) }
             // Offer a shuttle that beats walking, any shuttle when the walk is too long to suggest,
@@ -106,11 +119,7 @@ struct TripPlanner {
             .sorted { $0.total < $1.total }
             .prefix(3)
 
-        let idle = Set(stops.values
-            .filter { Walk.seconds($0.coordinate, dest) < Self.nearDestination }
-            .flatMap(\.routeIds))
-            .filter { geometries[$0] != nil && !running.contains($0) }
-            .sorted()
+        let idle = idleRoutes(near: dest, running: running)
 
         // The recommendation: the shuttle only if it really is the better way (or the walk is too long).
         let best = options.first
@@ -122,6 +131,112 @@ struct TripPlanner {
                     walkMeters: realWalk?.meters ?? Walk.meters(origin, dest),
                     verdict: verdict, idleRouteIds: idle,
                     isEstimate: realWalk == nil || options.contains { $0.isEstimate })
+    }
+
+    private func idleRoutes(near dest: CLLocationCoordinate2D, running: Set<String>) -> [String] {
+        Set(stops.values
+            .filter { Walk.seconds($0.coordinate, dest) < Self.nearDestination }
+            .flatMap(\.routeIds))
+            .filter { geometries[$0] != nil && !running.contains($0) }
+            .sorted()
+    }
+
+    // MARK: - Arrive by
+
+    /// "Arrive by": every route's way there that makes the deadline while letting you leave the latest.
+    /// Walking stays the recommendation unless a shuttle lets you leave later, or walking can't make it.
+    private func arriveByPlan(from origin: CLLocationCoordinate2D, to dest: CLLocationCoordinate2D,
+                              deadline: Double, walk: Double, realWalk: WalkLeg?,
+                              running: Set<String>, walks: WalkLookup) -> Plan {
+        let walkLeave = deadline - walk
+        let options = running.sorted()
+            .compactMap { arriveByOption(routeId: $0, from: origin, to: dest, deadline: deadline, walks: walks) }
+            .filter {
+                let leavesLater = $0.leaveIn > walkLeave + Self.mustBeatWalkingBy
+                return (leavesLater || walk >= Self.slowerShuttleNeedsWalk || walkLeave < 0 || walk > Self.tooFarToWalk)
+                    && $0.walkFromStop < walk
+            }
+            .sorted { $0.leaveIn > $1.leaveIn }
+            .prefix(3)
+        let verdict: Verdict
+        if let best = options.first, walkLeave < 0 || walk > Self.tooFarToWalk || best.leaveIn > walkLeave + Self.mustBeatWalkingBy {
+            verdict = .shuttle
+        } else if options.isEmpty, walk > Self.tooFarToWalk {
+            verdict = .tooFar
+        } else {
+            verdict = .walk
+        }
+        return Plan(options: Array(options), walkSeconds: walk,
+                    walkMeters: realWalk?.meters ?? Walk.meters(origin, dest),
+                    verdict: verdict, idleRouteIds: idleRoutes(near: dest, running: running),
+                    isEstimate: realWalk == nil || options.contains { $0.isEstimate }, arriveBy: deadline)
+    }
+
+    /// One route's way there that arrives by `deadline` and lets you leave the latest:
+    /// for each pair of stops, the last bus (counting later laps) that still makes it.
+    func arriveByOption(routeId: String, from origin: CLLocationCoordinate2D, to dest: CLLocationCoordinate2D,
+                        deadline: Double, walks: WalkLookup = { _, _ in nil }) -> Option? {
+        guard let g = geometries[routeId] else { return nil }
+        let rbuses = buses.filter { $0.bus.routeId == routeId }
+        guard !rbuses.isEmpty else { return nil }
+        let entries = g.isLoop ? Array(g.stopDistances.dropLast()) : g.stopDistances
+        var best: Option?
+
+        for (i, b) in entries.enumerated() {
+            guard let boardStop = stops[b.stopId] else { continue }
+            let real1 = walks(origin, boardStop.coordinate)
+            let w1 = real1?.seconds ?? Walk.seconds(origin, boardStop.coordinate)
+            guard w1 <= Self.maxWalkToStop else { continue }
+            let arrivals = catchableArrivals(rbuses, at: b.distance, on: g, walk: w1, until: deadline)
+            guard !arrivals.isEmpty else { continue }
+
+            for (j, a) in entries.enumerated() where a.stopId != b.stopId {
+                if !g.isLoop && j <= i { continue }
+                guard let alightStop = stops[a.stopId] else { continue }
+                let real2 = walks(alightStop.coordinate, dest)
+                let w2 = real2?.seconds ?? Walk.seconds(alightStop.coordinate, dest)
+                guard w2 <= Self.maxWalkFromStop else { continue }
+                var rideMeters = a.distance - b.distance
+                if rideMeters < 0 { rideMeters += g.length }
+                // The latest bus that still gets you there in time.
+                guard let caught = arrivals.reversed().first(where: { $0.time + rideMeters / $0.speed + w2 <= deadline })
+                else { continue }
+                let ride = rideMeters / caught.speed
+                let option = Option(routeId: routeId, boardStopId: b.stopId, alightStopId: a.stopId,
+                                    walkToStop: w1, busArrives: caught.time, ride: ride, walkFromStop: w2,
+                                    total: caught.time + ride + w2, stopCount: j > i ? j - i : j - i + entries.count,
+                                    isEstimate: real1 == nil || real2 == nil,
+                                    busAtStopNow: busWaiting(rbuses, at: b.distance, on: g, walk: w1),
+                                    boardDistance: b.distance, rideMeters: rideMeters, busId: caught.busId)
+                // Leave latest; when that ties, get there sooner.
+                if best == nil || option.leaveIn > best!.leaveIn + 1
+                    || (abs(option.leaveIn - best!.leaveIn) <= 1 && option.total < best!.total) {
+                    best = option
+                }
+            }
+        }
+        return best
+    }
+
+    /// Every pass of this route's buses at `distance` you could still catch before `until`, soonest first.
+    /// Same rules as firstCatchable, but counting every later lap instead of only the first.
+    private func catchableArrivals(_ rbuses: [TrackedBus], at distance: Double, on g: RouteGeometry,
+                                   walk: Double, until: Double) -> [(time: Double, speed: Double, busId: Int)] {
+        let notBefore = walk + Self.boardingBuffer
+        var out: [(time: Double, speed: Double, busId: Int)] = []
+        for bus in rbuses {
+            let (gap, atStop) = approach(bus, to: distance, on: g)
+            if atStop && walk <= Self.alreadyThere { out.append((walk, bus.speed, bus.id)) }
+            guard g.isLoop || !atStop else { continue }
+            var lap = atStop ? 1 : 0
+            while true {
+                let t = (gap + Double(lap) * g.length) / bus.speed
+                if t > min(until, Self.arriveByHorizon) || (!g.isLoop && lap > 0) { break }
+                if t >= notBefore { out.append((t, bus.speed, bus.id)) }
+                lap += 1
+            }
+        }
+        return out.sorted { $0.time < $1.time }
     }
 
     /// The fastest board/alight pair on one route, before comparing against walking.

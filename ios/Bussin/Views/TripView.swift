@@ -17,6 +17,9 @@ struct TripView: View {
     @State private var choseWalk = false
     @State private var choseShuttle = false
     @State private var pickingFrom = false
+    @State private var arriveMode = false
+    /// The "arrive by" time. Starts 30 minutes out, on the next 5-minute mark.
+    @State private var arriveTime = TripView.defaultArriveTime()
 
     /// 715 Broadway stands in until location arrives (PRODUCT.md).
     static let hub = CLLocationCoordinate2D(latitude: 40.72927, longitude: -73.99394)
@@ -24,13 +27,17 @@ struct TripView: View {
 
     /// Go follows you live, so it only makes sense once you're at the trip's starting point.
     static let goReadyMeters = 200.0
+    /// Arrive by: Go shows up this close to when you need to leave.
+    static let goSoonSeconds = 5 * 60.0
     static func goReady(from: Destination?, me: CLLocationCoordinate2D?) -> Bool {
         guard let me else { return false }
         guard let from else { return true }
         return Walk.meters(me, from.coordinate) / Walk.detour <= goReadyMeters
     }
     private var plan: TripPlanner.Plan {
-        store.planner.plan(from: origin, to: destination.coordinate, walks: { walks.leg($0, $1) })
+        store.planner.plan(from: origin, to: destination.coordinate,
+                           arriveBy: arriveMode ? arriveTime.timeIntervalSinceNow : nil,
+                           walks: { walks.leg($0, $1) })
     }
 
     /// The walks worth asking Apple Maps about: the whole way, plus to and from each shortlisted stop.
@@ -63,6 +70,26 @@ struct TripView: View {
                 if from == nil, userCoordinate == nil {
                     Text("Location is off, so this starts from 715 Broadway.")
                         .font(.footnote).foregroundStyle(Color.secondary)
+                }
+                Picker("When", selection: $arriveMode) {
+                    Text("Leave now").tag(false)
+                    Text("Arrive by").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .onChange(of: arriveMode) { _, on in
+                    if on { arriveTime = Self.defaultArriveTime() }
+                    Analytics.capture("arrive_by_toggled", ["on": on])
+                }
+                if arriveMode {
+                    // Up to 2 hours ahead, so long rides fit. The planner only counts on buses due within
+                    // about an hour (TripPlanner.arriveByHorizon): past that the live feed is guessing.
+                    DatePicker("Arrive by", selection: $arriveTime,
+                               in: Date.now.addingTimeInterval(5 * 60)...Date.now.addingTimeInterval(2 * 3600),
+                               displayedComponents: .hourAndMinute)
+                    if plan.options.isEmpty, (plan.walkLeaveIn ?? 0) < 0 {
+                        Text(tooSoonNote())
+                            .font(.footnote).foregroundStyle(Color.secondary)
+                    }
                 }
             }
             // Walking first when it's faster; the shuttle stays right below for anyone who'd rather ride.
@@ -159,7 +186,9 @@ struct TripView: View {
     @ViewBuilder
     private func walkSection(_ plan: TripPlanner.Plan, title: String) -> some View {
         Section(title) {
-            if plan.verdict == .tooFar {
+            // With "arrive by", an empty answer means nothing makes that time (the note above says so), not
+            // that the shuttles don't go there: show the walk and how late it would be.
+            if plan.verdict == .tooFar, plan.arriveBy == nil {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(tooFarTitle(plan)).font(.headline)
                     Text("It's about \(Fmt.distance(plan.walkMeters)) away.")
@@ -180,12 +209,20 @@ struct TripView: View {
         HStack(spacing: 12) {
             if let r = store.route(for: o.routeId) { RouteBadge(letter: r.letter, colorHex: r.colorHex) }
             VStack(alignment: .leading, spacing: 2) {
-                LiveLabel(text: "Bus in \(Fmt.eta(o.busArrives).lowercased())")
-                Text("Arrive \(Fmt.clock(Date.now.addingTimeInterval(o.total)))" + slower(o, walk: walk))
-                    .font(.footnote).foregroundStyle(Color.secondary)
+                if arriveMode {
+                    LiveLabel(text: o.leaveIn < 45 ? "Leave now" : "Leave in \(Fmt.minutes(o.leaveIn))")
+                    Text("Bus at \(Fmt.clock(Date.now.addingTimeInterval(o.busArrives))) · arrive \(Fmt.clock(Date.now.addingTimeInterval(o.total)))")
+                        .font(.footnote).foregroundStyle(Color.secondary)
+                } else {
+                    LiveLabel(text: "Bus in \(Fmt.eta(o.busArrives).lowercased())")
+                    Text("Arrive \(Fmt.clock(Date.now.addingTimeInterval(o.total)))" + slower(o, walk: walk))
+                        .font(.footnote).foregroundStyle(Color.secondary)
+                }
             }
             Spacer()
-            Text(about(o.isEstimate) + Fmt.minutes(o.total)).font(.title3.weight(.semibold)).foregroundStyle(Color.primary)
+            // Arrive by: the trip from when you leave, not counting the time before you need to go.
+            Text(about(o.isEstimate) + Fmt.minutes(arriveMode ? o.total - o.leaveIn : o.total))
+                .font(.title3.weight(.semibold)).foregroundStyle(Color.primary)
         }
         .padding(.vertical, 4)
     }
@@ -237,6 +274,10 @@ struct TripView: View {
     private func goButton(_ o: TripPlanner.Option) -> some View {
         if !Self.goReady(from: from, me: userCoordinate), let from, userCoordinate != nil {
             Text("Go appears once you're at \(from.name).").font(.footnote).foregroundStyle(Color.secondary)
+        } else if arriveMode, o.leaveIn > Self.goSoonSeconds {
+            // Go follows the next bus to come by, so it waits until the one this plan counts on is the next.
+            Text("Go appears when it's time to leave, at \(Fmt.clock(Date.now.addingTimeInterval(o.leaveIn))).")
+                .font(.footnote).foregroundStyle(Color.secondary)
         } else {
             goButtonReady(o)
         }
@@ -270,13 +311,36 @@ struct TripView: View {
             Image(systemName: "figure.walk").font(.title3).frame(width: 30)
             VStack(alignment: .leading, spacing: 2) {
                 Text("Walk the whole way").foregroundStyle(Color.primary)
-                Text("\(Fmt.distance(plan.walkMeters)) · arrive \(Fmt.clock(Date.now.addingTimeInterval(plan.walkSeconds)))")
+                Text(walkDetail(plan))
                     .font(.footnote).foregroundStyle(Color.secondary)
             }
             Spacer()
             Text(about(plan.isEstimate) + Fmt.minutes(plan.walkSeconds)).font(.title3.weight(.semibold)).foregroundStyle(Color.primary)
         }
         .padding(.vertical, 4)
+    }
+
+    /// "1.5 km · arrive 3:11", or with "arrive by": "leave by 8:32", or "too late for 8:55".
+    private func walkDetail(_ plan: TripPlanner.Plan) -> String {
+        let distance = Fmt.distance(plan.walkMeters)
+        guard let leave = plan.walkLeaveIn else {
+            return "\(distance) · arrive \(Fmt.clock(Date.now.addingTimeInterval(plan.walkSeconds)))"
+        }
+        if leave < 0 { return "\(distance) · too late for \(Fmt.clock(arriveTime))" }
+        return "\(distance) · leave by \(Fmt.clock(Date.now.addingTimeInterval(leave)))"
+    }
+
+    /// "Nothing gets you there by 4:52. The earliest is 5:07, leaving now."
+    private func tooSoonNote() -> String {
+        let now = store.planner.plan(from: origin, to: destination.coordinate, walks: { walks.leg($0, $1) })
+        let soonest = min(now.options.first?.total ?? .infinity, now.walkSeconds)
+        return "Nothing gets you there by \(Fmt.clock(arriveTime)). The earliest is \(Fmt.clock(Date.now.addingTimeInterval(soonest))), leaving now."
+    }
+
+    static func defaultArriveTime() -> Date {
+        let target = Date.now.addingTimeInterval(30 * 60)
+        let fiveMinutes = 5 * 60.0
+        return Date(timeIntervalSinceReferenceDate: (target.timeIntervalSinceReferenceDate / fiveMinutes).rounded(.up) * fiveMinutes)
     }
 
     private func idleNote(_ names: [String]) -> String {

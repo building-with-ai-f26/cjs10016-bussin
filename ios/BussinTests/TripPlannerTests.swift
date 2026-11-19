@@ -157,6 +157,51 @@ final class TripPlannerTests: XCTestCase {
         XCTAssertFalse(TripView.goReady(from: nil, me: nil), "no location: Go can't follow you")
     }
 
+    // MARK: - Arrive by
+
+    /// Board at Route A's 2nd stop, one bus 400 m back at 4 m/s, going to the far stop.
+    private func arriveByWorld() throws -> (planner: TripPlanner, from: CLLocationCoordinate2D,
+                                            to: CLLocationCoordinate2D, firstLap: Double, lap: Double, ride: Double) {
+        let w = try world()
+        let t = try longRide(w)
+        let planner = TripPlanner(geometries: w.gs, stops: w.stops,
+                                  buses: [bus(1, t.route.id, at: t.board.distance - 400, g: t.g)])
+        return (planner, try w.coord(t.board.stopId), try w.coord(t.alight.stopId),
+                100, t.g.length / 4, (t.alight.distance - t.board.distance) / 4)
+    }
+
+    func testArriveByTakesTheLatestBusThatStillMakesIt() throws {
+        let x = try arriveByWorld()
+        // The first pass arrives with 2 minutes to spare; the next lap would be far too late.
+        let early = x.planner.plan(from: x.from, to: x.to, arriveBy: x.firstLap + x.ride + 120)
+        let o1 = try XCTUnwrap(early.options.first)
+        XCTAssertLessThan(o1.busArrives, x.lap, "the first pass of the bus")
+        XCTAssertLessThanOrEqual(o1.total, x.firstLap + x.ride + 120)
+
+        // With time for a whole extra lap, leave later and catch the next pass instead.
+        let late = x.planner.plan(from: x.from, to: x.to, arriveBy: x.firstLap + x.lap + x.ride + 120)
+        let o2 = try XCTUnwrap(late.options.first)
+        XCTAssertGreaterThan(o2.busArrives, x.lap, "the next lap, so you can leave later")
+        XCTAssertLessThanOrEqual(o2.total, x.firstLap + x.lap + x.ride + 120)
+        XCTAssertEqual(o2.leaveIn, max(0, o2.busArrives - o2.walkToStop - TripPlanner.boardingBuffer), accuracy: 0.001)
+        XCTAssertEqual(late.verdict, .shuttle, "walking 45+ minutes can't make it")
+    }
+
+    func testArriveByTooSoonForAnythingSaysSo() throws {
+        let x = try arriveByWorld()
+        let plan = x.planner.plan(from: x.from, to: x.to, arriveBy: 30)
+        XCTAssertTrue(plan.options.isEmpty, "no bus gets there in 30 seconds")
+        XCTAssertLessThan(try XCTUnwrap(plan.walkLeaveIn), 0, "and walking would have to start in the past")
+    }
+
+    func testWithoutArriveByNothingChanges() throws {
+        let x = try arriveByWorld()
+        let now = x.planner.plan(from: x.from, to: x.to)
+        XCTAssertNil(now.arriveBy)
+        XCTAssertNil(now.walkLeaveIn)
+        XCTAssertLessThan(try XCTUnwrap(now.options.first).busArrives, x.lap, "leave now still means the next bus")
+    }
+
     func testFarAwayPlaceIsTooFar() throws {
         let w = try world()
         let t = try longRide(w)
