@@ -22,7 +22,7 @@ final class ShuttleStore {
     private var lastBusUpdate: Date?
     private let api: any PassioFetching
     private var routesById: [String: ShuttleRoute] = [:]
-    private var stopsById: [String: ShuttleStop] = [:]
+    private(set) var stopsById: [String: ShuttleStop] = [:]
     private var tracker = BusTracker()
 
     init(api: any PassioFetching = PassioAPI()) {

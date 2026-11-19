@@ -9,6 +9,8 @@ struct TripView: View {
     let destination: Destination
     let userCoordinate: CLLocationCoordinate2D?
     @Binding var selection: TripPlanner.Option?
+    let go: GoTrip
+    let onGo: () -> Void
     @State private var reported = false
     @State private var choseWalk = false
 
@@ -35,12 +37,6 @@ struct TripView: View {
 
     private func about(_ estimate: Bool) -> String { estimate ? "about " : "" }
 
-    private func walkingSource(_ plan: TripPlanner.Plan) -> String {
-        if !plan.isEstimate { return "Walking times from Apple Maps." }
-        return walks.unreachable ? "Walking times are estimates right now."
-                                 : "Checking walking times with Apple Maps…"
-    }
-
     private func report() {
         guard !reported, store.feedState == .live else { return }
         reported = true
@@ -64,7 +60,10 @@ struct TripView: View {
                                   systemImage: "figure.run")
                                 .font(.footnote).foregroundStyle(Color.secondary)
                         }
-                        if selection?.id == o.id { steps(o) }
+                        if selection?.id == o.id {
+                            steps(o)
+                            goButton(o)     // after the directions, so you read them first
+                        }
                     }
                 }
             }
@@ -81,9 +80,6 @@ struct TripView: View {
                     Button { choseWalk = true; selection = nil; Analytics.capture("trip_option_selected", ["choice": "walk"]) } label: { walkRow(plan) }
                         .listRowBackground(selection == nil ? Color.blue.opacity(0.12) : nil)
                 }
-            }
-            if plan.verdict != .tooFar {
-                Section { Text(walkingSource(plan)).font(.footnote).foregroundStyle(Color.secondary) }
             }
             if !plan.idleRouteIds.isEmpty {
                 Section {
@@ -141,6 +137,25 @@ struct TripView: View {
         Label("Ride \(route) \(o.stopCount) \(o.stopCount == 1 ? "stop" : "stops") to \(alight) · \(Fmt.minutes(o.ride))",
               systemImage: "bus.fill")
         Label("Walk \(Fmt.minutes(o.walkFromStop)) to \(destination.name)", systemImage: "figure.walk")
+    }
+
+    /// Go follows this trip live. It needs your location to know when you've boarded.
+    @ViewBuilder
+    private func goButton(_ o: TripPlanner.Option) -> some View {
+        Button {
+            if go.isRunning { go.end(outcome: "replaced") }
+            if go.start(option: o, to: destination, store: store, me: userCoordinate) { onGo() }
+        } label: {
+            Text("Go")
+                .font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 32, alignment: .center)
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(userCoordinate == nil)
+        .listRowSeparator(.hidden)
+        if userCoordinate == nil {
+            Text("Turn on location to use Go.").font(.footnote).foregroundStyle(Color.secondary)
+        }
     }
 
     private func walkRow(_ plan: TripPlanner.Plan) -> some View {

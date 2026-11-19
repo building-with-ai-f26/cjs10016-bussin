@@ -101,15 +101,15 @@
   <header>
     <h1>Bussin Build Map</h1>
     <p>Every phase is a route. Every task is a stop. The bus is where we are.</p>
-    <p class="updated">Updated Nov 19, 2026 · trips now highlight just the stretch you ride; "Go" is next</p>
+    <p class="updated">Updated Nov 19, 2026 · tap Go on a trip and Bussin walks you through it, step by step</p>
   </header>
 
   <div class="summary">
-    <span class="pill"><b>52</b> automatic checks passing</span>
+    <span class="pill"><b>64</b> automatic checks passing</span>
     <span class="pill"><b>Rider counts</b> logged every 15 min</span>
-    <span class="pill now"><b>Next:</b> "Go": live tracking that tells you when to get off</span>
+    <span class="pill now"><b>Next:</b> Go in your pocket: a lock screen card and a buzz</span>
     <span class="pill"><b>Build 2</b> log: 4 fill-ins left (your hours, PostHog screenshots, NYU email, what changed)</span>
-    <span class="pill"><b>Model next:</b> Fable/Opus for the Go logic, then Sonnet for its screens</span>
+    <span class="pill"><b>Model next:</b> Sonnet for the lock screen card</span>
   </div>
 
   <!-- Phase 1 -->
@@ -204,14 +204,15 @@
       <span class="status now">Up now</span>
       <span class="model"><b>Sonnet</b> for screens · <b>Fable/Opus</b> for arrows and trip math</span>
     </div>
-    <div class="bus"><span class="mk">B</span>The bus is here — next stop: "Go", live tracking that tells you when to get off</div>
+    <div class="bus"><span class="mk">B</span>The bus is here — next stop: Go in your pocket, with a lock screen card and a buzz</div>
     <ul class="stops">
       <li class="stop done">Zooming stays put <small>· the map used to snap back to an open bus every 4 seconds</small><span class="mtag mid">Sonnet</span></li>
       <li class="stop done">Tap the map to tuck the panel away <small>· tap the panel to bring it back</small><span class="mtag mid">Sonnet</span></li>
       <li class="stop done">Liquid Glass panel <small>· the map shows through, like Apple Maps on new iPhones</small><span class="mtag mid">Sonnet</span></li>
       <li class="stop done">Dark mode by default <small>· with a Light switch at the bottom of Home</small><span class="mtag mid">Sonnet</span></li>
       <li class="stop done">Trips highlight just the stretch you ride <small>· the rest of the route fades, and your on and off stops get rings</small><span class="mtag top">Fable/Opus</span></li>
-      <li class="stop">"Go" in the app <small>· tap Go and it walks you through: bus in 3 min, 4 stops left, get off next</small><span class="mtag top">Fable/Opus</span></li>
+      <li class="stop done">"Go" in the app <small>· tap Go and it walks you through: bus in 3 min, 4 stops left, get off next, with a buzz</small><span class="mtag top">Fable/Opus</span></li>
+      <li class="stop done">Walking-times note removed from trips <small>· your call</small><span class="mtag low">Haiku</span></li>
       <li class="stop">"Go" in your pocket <small>· a small lock screen card and a buzz when it's time to get off</small><span class="mtag mid">Sonnet</span></li>
       <li class="stop">Bus arrows that follow the road <small>· they sometimes point across the street today</small><span class="mtag top">Fable/Opus</span></li>
       <li class="stop">Start a trip from anywhere <small>· not just where you're standing</small><span class="mtag top">Fable/Opus</span></li>

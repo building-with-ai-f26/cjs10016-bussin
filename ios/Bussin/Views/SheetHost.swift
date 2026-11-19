@@ -10,6 +10,7 @@ struct SheetHost: View {
     let saved: SavedPlaces
     let walks: WalkTimes
     @Binding var tripSelection: TripPlanner.Option?
+    let go: GoTrip
 
     static let peek = PresentationDetent.height(140)
     static let medium = PresentationDetent.fraction(0.48)
@@ -18,7 +19,7 @@ struct SheetHost: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            HomeView(store: store, saved: saved, userCoordinate: userCoordinate, locationDenied: locationDenied)
+            HomeView(store: store, saved: saved, userCoordinate: userCoordinate, locationDenied: locationDenied, go: go)
                 .navigationDestination(for: Place.self) { place in
                     switch place {
                     case .stop(let id): StopView(store: store, stopId: id)
@@ -26,7 +27,9 @@ struct SheetHost: View {
                     case .bus(let id): BusView(store: store, busId: id)
                     case .search: SearchView(saved: saved, path: $path)
                     case .trip(let d): TripView(store: store, saved: saved, walks: walks, destination: d,
-                                                userCoordinate: userCoordinate, selection: $tripSelection)
+                                                userCoordinate: userCoordinate, selection: $tripSelection,
+                                                go: go, onGo: { path = [.go] })
+                    case .go: GoView(store: store, go: go, path: $path)
                     }
                 }
         }

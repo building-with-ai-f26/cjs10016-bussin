@@ -14,6 +14,7 @@ struct MapScreen: View {
     @State private var tripSelection: TripPlanner.Option?
     @State private var camera: MapCameraPosition = .region(MapScreen.nyu)
     @State private var detent: PresentationDetent = SheetHost.medium
+    @State private var go = GoTrip()
 
     /// Where every shuttle route runs: the Manhattan stretch of all seven, from the Village and
     /// Tribeca up the East Side to Langone. Route A's tail to MetroTech in Brooklyn is left out on
@@ -35,6 +36,7 @@ struct MapScreen: View {
         case .stop(let id): return Set(store.stop(id)?.routeIds ?? [])
         case .bus(let id): return store.trackedBuses.first { $0.id == id }.map { [$0.bus.routeId] }
         case .trip: return tripSelection.map { [$0.routeId] } ?? []   // walking: every route dims
+        case .go: return go.session.map { [$0.option.routeId] } ?? []
         case .search, nil: return nil
         }
     }
@@ -100,6 +102,9 @@ struct MapScreen: View {
                 }
                 Marker(d.name, coordinate: d.coordinate).tint(.red)
             }
+            if case .go = focus, let d = go.destination {
+                Marker(d.name, coordinate: d.coordinate).tint(.red)
+            }
 
             UserAnnotation()
         }
@@ -123,7 +128,7 @@ struct MapScreen: View {
         .sheet(isPresented: $sheetShown) {
             SheetHost(store: store, path: $path, userCoordinate: location.coordinate,
                       locationDenied: location.isDenied,
-                      saved: saved, walks: walks, tripSelection: $tripSelection, detent: $detent)
+                      saved: saved, walks: walks, tripSelection: $tripSelection, go: go, detent: $detent)
         }
         .onChange(of: path) { old, new in
             withAnimation(.easeInOut(duration: 0.5)) { camera = cameraForFocus() }
@@ -147,6 +152,11 @@ struct MapScreen: View {
             withAnimation(.easeInOut(duration: 1)) { camera = cameraForFocus() }
         }
         .task { await store.run() }
+        .task { await go.run(store: store, location: location) }        .onChange(of: go.lastLocationKey) { _, _ in
+            // Go follows you like a navigation app, until you move the map yourself.
+            guard case .go = focus, !camera.positionedByUser else { return }
+            withAnimation(.easeInOut(duration: 1)) { camera = cameraForFocus() }
+        }
         #if DEBUG
         .task { await openDebugLaunchPlace() }
         .task { await runDemoBus() }
@@ -248,8 +258,11 @@ struct MapScreen: View {
 
     /// The shuttle option picked on the trip screen, if one is showing.
     private var tripRide: TripPlanner.Option? {
-        guard case .trip = focus else { return nil }
-        return tripSelection
+        switch focus {
+        case .trip: return tripSelection
+        case .go: return go.session?.option
+        default: return nil
+        }
     }
 
     /// Where you'd get on and off, ringed in the route's color on the map.
@@ -302,6 +315,11 @@ struct MapScreen: View {
             if let o = tripSelection {
                 pts += [o.boardStopId, o.alightStopId].compactMap { store.stop($0)?.coordinate }
             }
+            return .region(regionAbovePanel(fitting: pts))
+        case .go:
+            // Centered on you, above the panel. Without a location yet, show the whole trip.
+            if let me = go.lastLocation { return .region(regionAbovePanel(fitting: [me], minSpan: 0.008)) }
+            let pts = go.session.map { [$0.boardStop, $0.alightStop, $0.destination] } ?? []
             return .region(regionAbovePanel(fitting: pts))
         case .search, nil:
             return .region(Self.nyu)
