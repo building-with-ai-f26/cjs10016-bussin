@@ -45,7 +45,7 @@ build-map.html            the visual progress tracker (published as a Claude art
   4. `cd ios && xcodegen generate`
   5. Run the tests (below). All of them should pass without a PostHog key or a phone.
 - **Run on a real iPhone:** plug it in, then `xcodebuild -project ios/Bussin.xcodeproj -scheme Bussin -destination 'id=<phone UDID>' -allowProvisioningUpdates build` and `xcrun devicectl device install app --device <phone UDID> <path to Bussin.app>`. Or pick the phone in Xcode and press Run.
-- **Jump to a screen in the simulator (debug builds):** add launch arguments such as `-place route:74769`, `-place stop:6545`, `-place search`, `-place trip:40.6943,-73.9865`, or `-resetWelcome YES` to see the first-open card again.
+- **Jump to a screen in the simulator (debug builds):** add launch arguments such as `-place route:74769`, `-place stop:6545`, `-place search`, `-place trip:40.6943,-73.9865`, or `-resetWelcome YES` to see the first-open card again. `-goAlertTest YES` fakes the "get off at the next stop" alert 8 seconds after you tap Go, so the lock screen card can be checked without riding.
 - **Product page:** `python3 -m http.server 8000 --directory docs`, then open http://localhost:8000/. It also publishes automatically from `main` to https://building-with-ai-f26.github.io/cjs10016-bussin/.
 - **Generate the Xcode project:** `cd ios && xcodegen generate` (run after any `project.yml` change or file add/remove; `ios/Bussin.xcodeproj` is gitignored)
 - **Run locally:** open `ios/Bussin.xcodeproj` in Xcode and hit Run, or `xcodebuild -project ios/Bussin.xcodeproj -scheme Bussin -destination 'platform=iOS Simulator,name=iPhone 17' build`

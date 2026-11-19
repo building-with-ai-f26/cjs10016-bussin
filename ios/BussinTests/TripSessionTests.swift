@@ -147,6 +147,29 @@ final class TripSessionTests: XCTestCase {
         XCTAssertEqual(s.step, .getOffNext)
     }
 
+    @MainActor
+    func testTheLockScreenCardShowsWhatMattersAtEachStep() throws {
+        var s = try session()
+        _ = s.update(me: beside(0, meters: 300), buses: [bus(1, at: 3000)], now: at(4))
+        var card = GoTrip.liveState(s, nil)
+        XCTAssertEqual(card.leg, 0)
+        XCTAssertEqual(card.minutes, 3, "200 s until the bus, rounded")
+        XCTAssertNil(card.stopsLeft)
+        XCTAssertFalse(card.getOffNext)
+
+        _ = s.update(me: beside(0, meters: 5), buses: [bus(1, at: 0)], now: at(8))
+        _ = s.update(me: g.pointCoordinate(at: 60), buses: [bus(1, at: 60)], now: at(12))
+        card = GoTrip.liveState(s, nil)
+        XCTAssertEqual(card.leg, 1)
+        XCTAssertEqual(card.stopsLeft, 2)
+        XCTAssertEqual(card.minutes, 6, "1940 m left at 5 m/s")
+
+        _ = s.update(me: g.pointCoordinate(at: 1050), buses: [bus(1, at: 1050)], now: at(16))
+        card = GoTrip.liveState(s, nil)
+        XCTAssertTrue(card.getOffNext)
+        XCTAssertEqual(card.stopsLeft, 1)
+    }
+
     func testATripEndsByItselfAfterTwoHours() throws {
         var s = try session()
         XCTAssertEqual(s.update(me: beside(0, meters: 300), buses: [bus(1, at: 3000)], now: at(2 * 3600 + 1)),
