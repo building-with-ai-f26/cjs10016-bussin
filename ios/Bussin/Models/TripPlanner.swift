@@ -55,6 +55,10 @@ struct TripPlanner {
         /// A bus is sitting at the boarding stop right now, but the rider isn't there yet.
         /// We can't know when it will pull out, so the times above are for the next sure bus.
         var busAtStopNow = false
+        /// Where on the route you board, in meters from its start, and how far you ride from there.
+        /// The map uses these to highlight exactly the stretch you ride; Go mode counts stops with them.
+        var boardDistance = 0.0
+        var rideMeters = 0.0
         var id: String { routeId }
     }
 
@@ -136,7 +140,8 @@ struct TripPlanner {
                                   walkToStop: w1, busArrives: caught.time, ride: ride, walkFromStop: w2,
                                   total: total, stopCount: j > i ? j - i : j - i + entries.count,
                                   isEstimate: true,
-                                  busAtStopNow: busWaiting(rbuses, at: b.distance, on: g, walk: w1))
+                                  busAtStopNow: busWaiting(rbuses, at: b.distance, on: g, walk: w1),
+                                  boardDistance: b.distance, rideMeters: rideMeters)
                     bestBoardDistance = b.distance
                     bestRideMeters = rideMeters
                 }
@@ -157,7 +162,8 @@ struct TripPlanner {
                       walkToStop: w1, busArrives: caught.time, ride: ride, walkFromStop: w2,
                       total: caught.time + ride + w2, stopCount: pick.stopCount,
                       isEstimate: real1 == nil || real2 == nil,
-                      busAtStopNow: busWaiting(rbuses, at: bestBoardDistance, on: g, walk: w1))
+                      busAtStopNow: busWaiting(rbuses, at: bestBoardDistance, on: g, walk: w1),
+                      boardDistance: bestBoardDistance, rideMeters: bestRideMeters)
     }
 
     /// Metres the bus still has to drive to reach `distance`, and whether it is sitting at that stop.

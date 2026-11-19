@@ -45,17 +45,25 @@ struct MapScreen: View {
             // Paint order = z-order: routes, then stops, then buses, then you on top.
             ForEach(store.routes) { route in
                 MapPolyline(coordinates: route.coordinates)
-                    .stroke(Color(hex: route.colorHex).opacity(isDimmed(route: route.id) ? 0.15 : 1),
+                    .stroke(Color(hex: route.colorHex).opacity(routeOpacity(route.id)),
                             style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round))
+            }
+
+            // On a trip, the stretch you'd actually ride, bold over its faded route.
+            if let ride = rideStretch {
+                MapPolyline(coordinates: ride.coordinates)
+                    .stroke(Color(hex: ride.colorHex),
+                            style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
             }
 
             ForEach(store.stops) { stop in
                 Annotation(stop.name, coordinate: stop.coordinate) {
+                    let big = focus == .stop(stop.id) || tripStopIds.contains(stop.id)
                     Button { path = [.stop(stop.id)] } label: {
                         Circle()
                             .fill(.white)
-                            .stroke(Color(.systemGray), lineWidth: focus == .stop(stop.id) ? 4 : 2)
-                            .frame(width: focus == .stop(stop.id) ? 16 : 10, height: focus == .stop(stop.id) ? 16 : 10)
+                            .stroke(tripStopIds.contains(stop.id) ? rideColor : Color(.systemGray), lineWidth: big ? 4 : 2)
+                            .frame(width: big ? 16 : 10, height: big ? 16 : 10)
                             .frame(width: 32, height: 32)
                             .contentShape(Circle())
                     }
@@ -236,6 +244,34 @@ struct MapScreen: View {
         }
         return store.stops.contains { near($0.coordinate, within: 22) }
             || (store.trackedBuses + demoBuses).contains { near($0.bus.coordinate, within: 44) }
+    }
+
+    /// The shuttle option picked on the trip screen, if one is showing.
+    private var tripRide: TripPlanner.Option? {
+        guard case .trip = focus else { return nil }
+        return tripSelection
+    }
+
+    /// Where you'd get on and off, ringed in the route's color on the map.
+    private var tripStopIds: Set<String> {
+        guard let o = tripRide else { return [] }
+        return [o.boardStopId, o.alightStopId]
+    }
+
+    private var rideColor: Color {
+        Color(hex: tripRide.flatMap { store.route(for: $0.routeId)?.colorHex } ?? "#8E8E93")
+    }
+
+    private var rideStretch: (coordinates: [CLLocationCoordinate2D], colorHex: String)? {
+        guard let o = tripRide, let g = store.geometries[o.routeId], let r = store.route(for: o.routeId)
+        else { return nil }
+        return (g.coordinates(from: o.boardDistance, along: o.rideMeters), r.colorHex)
+    }
+
+    /// Full color normally; faded behind the ride stretch on a trip; nearly gone when another route is in focus.
+    private func routeOpacity(_ id: String) -> Double {
+        if tripRide?.routeId == id { return 0.3 }
+        return isDimmed(route: id) ? 0.15 : 1
     }
 
     private func busDimmed(_ bus: LiveBus) -> Bool {

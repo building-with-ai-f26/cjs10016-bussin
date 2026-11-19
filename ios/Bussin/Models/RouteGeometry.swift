@@ -89,6 +89,35 @@ struct RouteGeometry {
         return Projection(distanceAlong: bestD, offsetMeters: bestOff)
     }
 
+    /// The stretch of line that starts `start` meters along and runs `meters` forward, as map
+    /// points: the part of a route a rider actually rides. On a loop it wraps through the start;
+    /// a one-way line stops at its end. Always at least two points, so it can be drawn.
+    func coordinates(from start: Double, along meters: Double) -> [CLLocationCoordinate2D] {
+        let s = isLoop ? wrapped(start) : max(0, min(length, start))
+        let span = max(0, isLoop ? min(meters, length) : min(meters, length - s))
+        var out = [pointCoordinate(at: s)]
+        // Every bend of the line passed on the way, in order. A loop may pass its start once.
+        for lap in 0...(isLoop ? 1 : 0) {
+            for (i, d) in cumulative.enumerated() {
+                let along = d + Double(lap) * length
+                if along > s && along < s + span { out.append(coordinate(of: points[i])) }
+            }
+        }
+        out.append(pointCoordinate(at: isLoop ? wrapped(s + span) : s + span))
+        return out
+    }
+
+    /// Distance folded back onto the loop, 0 ..< length.
+    private func wrapped(_ d: Double) -> Double {
+        let r = d.truncatingRemainder(dividingBy: length)
+        return r < 0 ? r + length : r
+    }
+
+    private func coordinate(of q: SIMD2<Double>) -> CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: originLat + q.y / Self.mPerDegLat,
+                               longitude: originLon + q.x / mPerDegLon)
+    }
+
     /// Coordinate at a given distance along the line (tests + "bus is here" UI).
     func pointCoordinate(at distance: Double) -> CLLocationCoordinate2D {
         let d = max(0, min(length, distance))
