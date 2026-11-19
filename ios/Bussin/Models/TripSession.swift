@@ -138,7 +138,9 @@ struct TripSession {
             currentGap = nil
         }
         if current == nil {
-            let next = buses.filter { $0.id != busId }
+            // The closest bus still coming. That can be the one that just left: on a loop with a
+            // single bus out, its next lap is the bus to catch.
+            let next = buses
                 .compactMap { b in gapToBoard(b).map { (bus: b, gap: $0) } }
                 .min { $0.gap < $1.gap }
             if let next {

@@ -6,6 +6,7 @@ struct HomeView: View {
     let saved: SavedPlaces
     let userCoordinate: CLLocationCoordinate2D?
     let locationDenied: Bool
+    let go: GoTrip
     @Environment(\.openURL) private var openURL
     @AppStorage(Appearance.storageKey) private var appearance = Appearance.standard
 
@@ -35,6 +36,22 @@ struct HomeView: View {
                     }
                     .foregroundStyle(.secondary)
                     .frame(minHeight: RowMetrics.minHeight)
+                }
+            }
+            if let status = go.status(store: store) {
+                Section("Trip in progress") {
+                    NavigationLink(value: Place.go) {
+                        HStack(spacing: RowMetrics.iconGap) {
+                            Image(systemName: "location.north.line.fill")
+                                .font(.title3).foregroundStyle(Color.blue)
+                                .frame(width: RowMetrics.iconColumn)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(status.title).font(.headline)
+                                Text(status.detail).font(.subheadline).foregroundStyle(.secondary)
+                            }
+                        }
+                        .frame(minHeight: RowMetrics.minHeight)
+                    }
                 }
             }
             if locationDenied {

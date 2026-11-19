@@ -9,6 +9,8 @@ struct TripView: View {
     let destination: Destination
     let userCoordinate: CLLocationCoordinate2D?
     @Binding var selection: TripPlanner.Option?
+    let go: GoTrip
+    let onGo: () -> Void
     @State private var reported = false
     @State private var choseWalk = false
 
@@ -53,6 +55,8 @@ struct TripView: View {
                     ForEach(plan.options) { o in
                         Button { choseWalk = false; selection = o; Analytics.capture("trip_option_selected", ["choice": "shuttle"]) } label: { optionRow(o) }
                             .listRowBackground(selection?.id == o.id ? Color.blue.opacity(0.12) : nil)
+                        // Go sits right under the chosen option, so it's on screen at half height.
+                        if selection?.id == o.id { goButton(o) }
                         if o.busAtStopNow {
                             Label("A bus is at \(store.stop(o.boardStopId)?.name ?? "the stop") right now. You're \(Fmt.minutes(o.walkToStop)) away, so it may leave without you. The time above is the next one.",
                                   systemImage: "figure.run")
@@ -132,6 +136,25 @@ struct TripView: View {
         Label("Ride \(route) \(o.stopCount) \(o.stopCount == 1 ? "stop" : "stops") to \(alight) · \(Fmt.minutes(o.ride))",
               systemImage: "bus.fill")
         Label("Walk \(Fmt.minutes(o.walkFromStop)) to \(destination.name)", systemImage: "figure.walk")
+    }
+
+    /// Go follows this trip live. It needs your location to know when you've boarded.
+    @ViewBuilder
+    private func goButton(_ o: TripPlanner.Option) -> some View {
+        Button {
+            if go.isRunning { go.end(outcome: "replaced") }
+            if go.start(option: o, to: destination, store: store, me: userCoordinate) { onGo() }
+        } label: {
+            Label("Go", systemImage: "location.north.line.fill")
+                .font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 32)
+        }
+        .buttonStyle(.borderedProminent)
+        .disabled(userCoordinate == nil)
+        .listRowSeparator(.hidden)
+        if userCoordinate == nil {
+            Text("Turn on location to use Go.").font(.footnote).foregroundStyle(Color.secondary)
+        }
     }
 
     private func walkRow(_ plan: TripPlanner.Plan) -> some View {

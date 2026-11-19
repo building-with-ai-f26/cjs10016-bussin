@@ -7,6 +7,7 @@ enum Place: Hashable {
     case bus(Int)
     case search
     case trip(Destination)
+    case go             // the live trip after tapping Go
 }
 
 /// Shared row measurements, so every row's icon sits in the same column and every label

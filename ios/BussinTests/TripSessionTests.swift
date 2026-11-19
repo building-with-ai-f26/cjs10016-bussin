@@ -120,6 +120,16 @@ final class TripSessionTests: XCTestCase {
         XCTAssertEqual(s.step, .toStop)
     }
 
+    func testWhenTheOnlyBusLeavesWithoutYouItsNextLapIsTheOneToCatch() throws {
+        var s = try session()
+        _ = s.update(me: beside(0, meters: 400), buses: [bus(1, at: 3990)], now: at(4))
+        XCTAssertEqual(try XCTUnwrap(s.busSecondsAway), 0, accuracy: 1, "it's at the stop")
+        let events = s.update(me: beside(0, meters: 350), buses: [bus(1, at: 100)], now: at(8))
+        XCTAssertEqual(events, [], "same bus, so nothing switched")
+        XCTAssertEqual(s.busId, 1)
+        XCTAssertEqual(try XCTUnwrap(s.busSecondsAway), 780, accuracy: 1, "3900 m round the loop at 5 m/s")
+    }
+
     func testStandingBesideABusYouDontBoardIsNotRiding() throws {
         var s = try session()
         _ = s.update(me: beside(0, meters: 5), buses: [bus(1, at: 0), bus(2, at: 2000)], now: at(4))

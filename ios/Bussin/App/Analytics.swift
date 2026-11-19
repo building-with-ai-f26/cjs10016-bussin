@@ -53,8 +53,8 @@ enum Analytics {
                 "route": tb.flatMap { store.route(for: $0.bus.routeId)?.letter } ?? "",
                 "riders_aboard": tb?.bus.ridersAboard ?? -1,
             ])
-        case .search, .trip:
-            break       // the trip screen reports its own answer through planned(_:store:)
+        case .search, .trip, .go:
+            break       // the trip screen reports its own answer; Go sends trip_started / trip_ended
         }
     }
 
