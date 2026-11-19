@@ -84,7 +84,9 @@ struct MapScreen: View {
                     Button { path = [.bus(bus.id)] } label: {
                         BusMarker(letter: store.route(for: bus.routeId)?.letter ?? "?",
                                   colorHex: store.route(for: bus.routeId)?.colorHex ?? "#8E8E93",
-                                  heading: bus.headingDegrees,
+                                  // The way its route runs (Passio's own course is unreliable),
+                                  // turned to match the map if it's been rotated.
+                                  heading: tracked.heading.map { $0 - mapHeading },
                                   isStale: bus.isStale,
                                   isSelected: focus == .bus(bus.id))
                     }
@@ -211,7 +213,7 @@ struct MapScreen: View {
             let bus = LiveBus(id: -1, number: "DEMO", routeId: "demo",
                               coordinate: .init(latitude: lat, longitude: -74.0005), headingDegrees: 0,
                               ridersAboard: nil, capacity: nil, isStale: false)
-            demoBuses = [TrackedBus(bus: bus, distanceAlong: 0, speed: 4)]
+            demoBuses = [TrackedBus(bus: bus, distanceAlong: 0, speed: 4, heading: 0)]
             lat += 0.0018
             try? await Task.sleep(for: .seconds(4))
         }
