@@ -35,12 +35,6 @@ struct TripView: View {
 
     private func about(_ estimate: Bool) -> String { estimate ? "about " : "" }
 
-    private func walkingSource(_ plan: TripPlanner.Plan) -> String {
-        if !plan.isEstimate { return "Walking times from Apple Maps." }
-        return walks.unreachable ? "Walking times are estimates right now."
-                                 : "Checking walking times with Apple Maps…"
-    }
-
     private func report() {
         guard !reported, store.feedState == .live else { return }
         reported = true
@@ -81,9 +75,6 @@ struct TripView: View {
                     Button { choseWalk = true; selection = nil; Analytics.capture("trip_option_selected", ["choice": "walk"]) } label: { walkRow(plan) }
                         .listRowBackground(selection == nil ? Color.blue.opacity(0.12) : nil)
                 }
-            }
-            if plan.verdict != .tooFar {
-                Section { Text(walkingSource(plan)).font(.footnote).foregroundStyle(Color.secondary) }
             }
             if !plan.idleRouteIds.isEmpty {
                 Section {
