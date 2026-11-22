@@ -22,6 +22,13 @@ struct TripSession {
     static let busWentBy = 200.0     // the bus you were waiting for jumped this far away: it went past
     static let onRoute = 60.0        // your own location can stand in for a missing bus this close to the line
     static let maxDuration: TimeInterval = 2 * 3600
+    /// A trip someone forgot about shouldn't keep location on for two hours. These end it sooner:
+    /// still not aboard 45 minutes after Go, or still walking 30 minutes after getting off.
+    static let maxWaitToBoard: TimeInterval = 45 * 60
+    static let maxWalkAfterRide: TimeInterval = 30 * 60
+
+    /// Why a trip timed out, so the screen can say so.
+    enum Timeout: Equatable { case neverBoarded, longWalkAfterRide, tooLong }
 
     let option: TripPlanner.Option
     let destination: CLLocationCoordinate2D
@@ -39,6 +46,10 @@ struct TripSession {
     /// Once aboard: meters ridden past the boarding point, and the time left until your stop.
     private(set) var progress = 0.0
     private(set) var rideSecondsLeft: Double?
+
+    /// When you got off the bus, for the walk-after-the-ride limit.
+    private(set) var offBusAt: Date?
+    private(set) var timedOutBecause: Timeout?
 
     private var besideBusId: Int?
     private var besideCount = 0
@@ -83,25 +94,38 @@ struct TripSession {
     /// Feed in the latest location and buses. Returns what just happened, if anything.
     mutating func update(me: CLLocationCoordinate2D?, buses: [TrackedBus], now: Date) -> [Event] {
         guard !isOver else { return [] }
-        if now.timeIntervalSince(startedAt) > Self.maxDuration {
-            step = .timedOut
-            return [.timedOut]
+        if now.timeIntervalSince(startedAt) > Self.maxDuration { return timeOut(.tooLong) }
+        if step == .toStop || step == .atStop, now.timeIntervalSince(startedAt) > Self.maxWaitToBoard {
+            return timeOut(.neverBoarded)
+        }
+        if step == .toDestination, let off = offBusAt, now.timeIntervalSince(off) > Self.maxWalkAfterRide {
+            return timeOut(.longWalkAfterRide)
         }
         let mine = buses.filter { $0.bus.routeId == option.routeId }
+        let events: [Event]
         switch step {
         case .toStop, .atStop:
-            return beforeBoarding(me: me, buses: mine)
+            events = beforeBoarding(me: me, buses: mine)
         case .riding, .getOffNext:
-            return whileRiding(me: me, buses: mine)
+            events = whileRiding(me: me, buses: mine)
         case .toDestination:
             if let me, Self.meters(me, destination) <= Self.arrivedWithin {
                 step = .arrived
-                return [.arrived]
+                events = [.arrived]
+            } else {
+                events = []
             }
-            return []
         case .arrived, .timedOut:
-            return []
+            events = []
         }
+        if step == .toDestination, offBusAt == nil { offBusAt = now }
+        return events
+    }
+
+    private mutating func timeOut(_ why: Timeout) -> [Event] {
+        step = .timedOut
+        timedOutBecause = why
+        return [.timedOut]
     }
 
     // MARK: - Before boarding
