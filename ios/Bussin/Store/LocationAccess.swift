@@ -21,9 +21,30 @@ final class LocationAccess: NSObject, CLLocationManagerDelegate {
     var isDenied: Bool { status == .denied || status == .restricted }
     var coordinate: CLLocationCoordinate2D? { manager.location?.coordinate }
 
+    /// True once Home has asked for location (after the welcome card). Location only runs while
+    /// this is true and Bussin is on screen, or while a Go trip is running.
+    private var wanted = false
+    private var onScreen = true
+
     func start() {
+        wanted = true
         manager.requestWhenInUseAuthorization()
-        manager.startUpdatingLocation()
+        if onScreen { manager.startUpdatingLocation() }
+    }
+
+    /// Bussin left the screen (home screen, another app, or the phone locked). Without a Go trip,
+    /// location stops right away, so iOS never shows Bussin using it in the background.
+    func appLeftScreen() {
+        onScreen = false
+        guard tripSession == nil else { return }
+        manager.stopUpdatingLocation()
+        manager.stopUpdatingHeading()
+    }
+
+    /// Bussin is back on screen: pick location up again if Home had it on.
+    func appCameBack() {
+        onScreen = true
+        if wanted { manager.startUpdatingLocation() }
     }
 
     /// Go: keep following the rider with the screen off, for this trip only. iOS shows a small
@@ -41,12 +62,16 @@ final class LocationAccess: NSObject, CLLocationManagerDelegate {
         manager.startUpdatingHeading()
     }
 
+    /// Safe to call more than once. If the trip ends while Bussin is off screen (you arrived with the
+    /// phone in your pocket), location stops completely instead of waiting for the app to reopen.
     func endTripTracking() {
         tripSession?.invalidate()
         tripSession = nil
         manager.allowsBackgroundLocationUpdates = false
+        manager.showsBackgroundLocationIndicator = false
         manager.stopUpdatingHeading()
         heading = nil
+        if !onScreen { manager.stopUpdatingLocation() }
     }
 
     nonisolated func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {

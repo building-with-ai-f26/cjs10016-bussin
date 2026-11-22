@@ -176,4 +176,28 @@ final class TripSessionTests: XCTestCase {
                        [.timedOut])
         XCTAssertTrue(s.isOver)
     }
+
+    func testAForgottenTripEndsIfYouNeverBoard() throws {
+        var s = try session()
+        _ = s.update(me: beside(0, meters: 300), buses: [bus(1, at: 3000)], now: at(60))
+        XCTAssertEqual(s.update(me: beside(0, meters: 300), buses: [bus(1, at: 3000)], now: at(44 * 60)), [],
+                       "still waiting at 44 minutes")
+        XCTAssertEqual(s.update(me: beside(0, meters: 300), buses: [bus(1, at: 3000)], now: at(45 * 60 + 1)),
+                       [.timedOut])
+        XCTAssertEqual(s.timedOutBecause, .neverBoarded)
+        XCTAssertTrue(s.isOver)
+    }
+
+    func testAForgottenTripEndsHalfAnHourAfterYouGetOff() throws {
+        var s = try session()
+        _ = s.update(me: beside(0, meters: 5), buses: [bus(1, at: 0)], now: at(4))
+        _ = s.update(me: g.pointCoordinate(at: 60), buses: [bus(1, at: 60)], now: at(8))
+        _ = s.update(me: g.pointCoordinate(at: 1050), buses: [bus(1, at: 1050)], now: at(12))
+        XCTAssertEqual(s.update(me: g.pointCoordinate(at: 1995), buses: [bus(1, at: 1995)], now: at(16)), [.gotOff])
+        XCTAssertEqual(s.offBusAt, at(16))
+        // Never quite reaches the destination (say, GPS inside a building).
+        XCTAssertEqual(s.update(me: g.pointCoordinate(at: 2000), buses: [], now: at(16 + 29 * 60)), [])
+        XCTAssertEqual(s.update(me: g.pointCoordinate(at: 2000), buses: [], now: at(16 + 30 * 60 + 1)), [.timedOut])
+        XCTAssertEqual(s.timedOutBecause, .longWalkAfterRide)
+    }
 }

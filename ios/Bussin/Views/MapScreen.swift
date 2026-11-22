@@ -5,6 +5,7 @@ import CoreLocation
 struct MapScreen: View {
     @State private var store = ShuttleStore()
     @State private var location = LocationAccess()
+    @Environment(\.scenePhase) private var scenePhase
     @State private var path: [Place] = []
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     @State private var sheetShown = false       // opens once the welcome card is done
@@ -198,6 +199,14 @@ struct MapScreen: View {
             if ServiceStatus.feedJustWentDown(from: old, to: new) { Analytics.capture("feed_unreachable") }
         }
         .onChange(of: location.status, initial: true) { _, status in Analytics.locationPermission(status) }
+        .onChange(of: scenePhase) { _, phase in
+            // Location runs only while Bussin is on screen, or during a Go trip.
+            switch phase {
+            case .background: location.appLeftScreen()
+            case .active: location.appCameBack()
+            default: break      // .inactive: Control Center or a call banner, the app is still showing
+            }
+        }
         .onAppear {
             #if DEBUG
             if UserDefaults.standard.bool(forKey: "resetWelcome") { hasSeenWelcome = false; return }

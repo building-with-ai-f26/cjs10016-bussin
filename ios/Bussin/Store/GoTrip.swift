@@ -177,7 +177,14 @@ final class GoTrip {
         case .arrived:
             return Status(title: "You're here", detail: place)
         case .timedOut:
-            return Status(title: "Trip ended", detail: "Go stops following a trip after two hours.")
+            switch s.timedOutBecause {
+            case .neverBoarded:
+                return Status(title: "Trip ended", detail: "No bus boarded after 45 minutes, so Go stopped.")
+            case .longWalkAfterRide:
+                return Status(title: "Trip ended", detail: "Go stops 30 minutes after you get off the bus.")
+            case .tooLong, nil:
+                return Status(title: "Trip ended", detail: "Go stops following a trip after two hours.")
+            }
         }
     }
 }
