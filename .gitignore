@@ -1,7 +1,6 @@
 # Secrets & Environment Variables (NEVER COMMIT THESE)
 .env
 .env.*
-!.env.example
 *.pem
 *.key
 secrets.*

@@ -58,7 +58,7 @@ Then hit Run. The app builds against the live Passio feed; no keys needed. Analy
 
 ## Keys and secrets
 
-Nothing needs an API key yet. Passio's feed is public, and the prototype map is drawn from OpenStreetMap data. If that changes, keys go in a local `.env` file, which git ignores, and placeholders go in `.env.example`.
+Passio's feed is public, and the prototype map is drawn from OpenStreetMap data. The only key is PostHog's, which goes in `ios/Secrets.xcconfig` (gitignored); `ios/Secrets.example.xcconfig` shows the format. See `SECURITY.md` for the full audit.
 
 ---
 
