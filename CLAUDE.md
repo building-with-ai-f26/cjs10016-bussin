@@ -17,7 +17,7 @@ This file holds the working agreements and current state that used to live only 
 - **Pace.** Chris builds ahead of the class calendar and logs each class build in `docs/index.html` before it is due.
 - **Workflow.** Use the superpowers flow: brainstorm, then write a plan in `docs/superpowers/plans/`, then execute it inline, then finish the branch. Run tests before claiming anything works.
 
-## Where things stand (Nov 17, 2026)
+## Where things stand (Nov 22, 2026)
 
 - **Phase 1 is merged.** This is the walking skeleton: live buses, routes, and stops on Apple Maps, with the Passio feed parsed and tested.
 - **Phase 2 is merged.** It added ETAs and the four screens:
@@ -57,7 +57,7 @@ This file holds the working agreements and current state that used to live only 
 3. **Phase 4: share-ready.** The app side is done (welcome card, notices, funnel events, privacy page, release settings, dashboard). TestFlight is in Apple's hands:
    - Build 1.0.0 (1) was uploaded on Nov 17 and submitted for Beta App Review the same day, in the **external** TestFlight group "NYU Riders".
    - Build 1.0.0 (2) was uploaded on Nov 19 with everything from Phase 4b (Go and the Live Activity, background location during a trip, dark mode, arrows, slower shuttles, start anywhere, arrive by, upcoming buses). It needs its own beta review; the review notes need a paragraph on Go's background location and lock screen card.
-   - Build 1.0.0 (3) was uploaded on Nov 22. It adds one change: location stops when Bussin leaves the screen unless a Go trip is running, and a forgotten trip ends on its own. It goes to the external group and waits for beta review, then needs "Notify Testers" once approved. The next build is 4 (`CURRENT_PROJECT_VERSION` in `ios/project.yml`, set for both targets).
+   - Build 1.0.0 (3) was uploaded on Nov 22. It adds one change: location stops when Bussin leaves the screen unless a Go trip is running, and a forgotten trip ends on its own. Apple approved it the same day and Chris pressed "Notify Testers", so build 3 is what the public link hands out now. The next build is 4 (`CURRENT_PROJECT_VERSION` in `ios/project.yml`, set for both targets).
    - If an upload fails with "App Store Connect access … is required", Xcode's account sign-in has lapsed: Chris signs in again under Xcode → Settings → Accounts. The export options plist lives in the session scratchpad and must be recreated if missing (method app-store-connect, destination upload, signingStyle automatic, the team ID read from `ios/Secrets.xcconfig`).
    - The App Store Connect name is **Bussin Transit** because "Bussin" was taken. The name under the icon on a phone is still "Bussin". The name can change later without a new build.
    - There is also an internal group called "NYU Riders". It can't carry a public link, so ignore it.
