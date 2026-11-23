@@ -59,6 +59,7 @@ build-map.html            the visual progress tracker (published as a Claude art
 4. **Verify changes:** Run relevant checks. For a reproducible logic bug, use a failing test to demonstrate the fix when practical. Record manual checks and known limitations; follow the selected Build 4 evaluation track.
 5. **Zero secrets in code:** Never hardcode API keys, tokens, or credentials. Keys and the Apple team ID live in the gitignored `ios/Secrets.xcconfig`, which feeds the build through `Config.xcconfig` and `project.yml`. When a new variable is needed, add a placeholder for it to `ios/Secrets.example.xcconfig`. (The PostHog project key is a public, write-only client key, which is why it also appears in the product page's script. Nothing else is allowed there.)
 6. **Stop when looping:** If a fix fails twice in a row, stop, summarize what failed, and ask the human before trying a third approach.
+7. **Merge only when Chris says "merge":** Opening a pull request is not permission to merge it, and a "yes" to one pull request doesn't cover the next. Never put a merge in the same command as other work. *Why:* on Nov 19 the agent put "merge PR 13" and "open a new docs PR" in one command when Chris had only asked about the docs. Auto mode blocked it. Since main deploys the website, an unasked-for merge would have changed the live page without Chris knowing.
 
 ## 4. Shipping
 1. Run the tests before every commit.
